@@ -52,6 +52,28 @@ class Settings(BaseSettings):
         description="Proposed deny-by-default consent flag (OQ-US016 UX/storage unresolved)",
     )
 
+    # --- EP-002 Proposed search / packing knobs (NOT Confirmed Appendix D) ---
+    search_mmr_lambda: float = Field(
+        default=0.7,
+        description="Proposed MMR λ (relevance vs diversity) — not Confirmed",
+    )
+    search_vector_weight: float = Field(
+        default=0.55,
+        description="Proposed vector fusion weight — not Confirmed",
+    )
+    search_bm25_weight: float = Field(
+        default=0.45,
+        description="Proposed BM25 fusion weight — not Confirmed",
+    )
+    search_candidate_pool: int = Field(
+        default=40,
+        description="Proposed candidate pool size before MMR — not Confirmed",
+    )
+    default_phase: str = Field(
+        default="Dev",
+        description="Proposed default SDLC phase when OQ-16 phase omitted — not Confirmed",
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:

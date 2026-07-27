@@ -47,7 +47,7 @@ docs=()
 if [[ -d "$CONTRACTS_DIR" ]] && [[ -n "$(ls -A "$CONTRACTS_DIR" 2>/dev/null)" ]]; then
     docs+=("contracts/")
 fi
-[[ -f "$QUICKSTART" ]] && docs+=("quickstart.md")
+[[ -f "$QUICKSTART" ]] && docs+=("quickstart.md")  # optional legacy; do not create new quickstart.md (lean Spec Kit)
 
 # Resolve tasks template through override stack
 TASKS_TEMPLATE=$(resolve_template "tasks-template" "$REPO_ROOT") || true

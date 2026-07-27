@@ -1,0 +1,40 @@
+---
+description: Lean Spec Kit artifacts — skip optional docs to save tokens
+alwaysApply: true
+---
+
+# Lean Spec Kit Artifacts
+
+Prefer fewer, shorter planning files. Do not generate optional adjuncts unless the user explicitly asks.
+
+## Required per feature (only these)
+
+```text
+specs/<feature>/
+  spec.md
+  plan.md          # keep lean; avoid repeating the spec
+  tasks.md
+  validation-report.md   # after Spec Kit triad
+  review-report.md       # after implementation + tests only
+```
+
+## Do NOT generate (unless user asks)
+
+- `specs/<feature>/quickstart.md`
+- `specs/<feature>/out-of-scope-notes.md`
+- `specs/<feature>/open-questions.md` — put Open Questions inside `spec.md` / `plan.md` / `validation-report.md` only
+- `docs/design/ui-not-applicable.md` — if UI is N/A, one line in the lead-dev handoff is enough
+- Full `docs/design/<feature>/*` suite when there is no user-facing UI
+
+## Handoffs (token control)
+
+- Prefer short appends to `.cursor/agent-handoffs/handoff.md` (≤40 lines per handoff).
+- Prefer feature-local briefs under `.cursor/agent-handoffs/<feature>-*.md` for long checklists; do not dump full task lists into the global handoff.
+- Do not re-read the entire historical `handoff.md` when a feature brief exists — read the brief + last few handoff blocks.
+- Periodically archive old handoff content; do not require agents to load the full archive.
+
+## Lean writing
+
+- Do not duplicate BRD / architecture / prior epic text; cite paths and section IDs.
+- Label Proposed vs Confirmed; do not invent Confirmed contracts.
+- Prefer tables over long prose where possible.

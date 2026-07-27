@@ -1,7 +1,7 @@
 [project]
 name = "contextos-orchestrator"
 version = "0.1.0"
-description = "ContextOS FastAPI orchestrator — L5 packing & indexing (EP-001)"
+description = "ContextOS FastAPI orchestrator — L5 packing, indexing, hybrid search & phase packing"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115.0",

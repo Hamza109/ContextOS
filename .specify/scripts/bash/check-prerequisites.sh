@@ -149,7 +149,7 @@ if [[ -d "$CONTRACTS_DIR" ]] && [[ -n "$(ls -A "$CONTRACTS_DIR" 2>/dev/null)" ]]
     docs+=("contracts/")
 fi
 
-[[ -f "$QUICKSTART" ]] && docs+=("quickstart.md")
+[[ -f "$QUICKSTART" ]] && docs+=("quickstart.md")  # optional legacy; do not create new quickstart.md (lean Spec Kit)
 
 # Include tasks.md if requested and it exists
 if $INCLUDE_TASKS && [[ -f "$TASKS" ]]; then

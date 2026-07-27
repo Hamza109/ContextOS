@@ -152,9 +152,9 @@ UI/UX Design Agent responsibilities:
 - Define screens, flows, wireframes, component map, responsive behavior, accessibility notes, interaction states, and frontend implementation brief.
 - Reuse existing design system and UI patterns where available.
 - Mark missing design evidence and open questions explicitly.
-- Generate `docs/design/ui-not-applicable.md` if no user-facing UI is required.
+- If no user-facing UI is required: **skip** design docs. Record one line `UI/UX: N/A` in the handoff — do **not** create `docs/design/ui-not-applicable.md` (lean Spec Kit rule).
 
-Skip UI/UX design only when `plan.md` and `tasks.md` prove no user-facing UI is required.
+Skip UI/UX design when `plan.md` and `tasks.md` prove no user-facing UI is required.
 
 ### 3. Backend Implementation
 
@@ -258,6 +258,8 @@ Before passing context to another sub-agent session, append state to:
 ```text
 .cursor/agent-handoffs/handoff.md
 ```
+
+**Lean handoffs:** ≤40 lines per block. Use `.cursor/agent-handoffs/<feature>-brief.md` for long task checklists. Do **not** create `quickstart.md`, standalone `open-questions.md`, `out-of-scope-notes.md`, or `docs/design/ui-not-applicable.md` unless the user asks. Do not assign polish tasks that only produce those files.
 
 Use this exact format:
 

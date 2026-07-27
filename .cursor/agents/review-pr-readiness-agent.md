@@ -80,7 +80,8 @@ Before writing the report, inspect the repository for implementation files and e
 
 * List feature folders under `specs/`.
 * Read `.specify/memory/constitution.md` or `constitution.md`.
-* Read `specs/<feature-name>/spec.md`, `plan.md`, and `tasks.md`.
+* Read `specs/<feature-name>/spec.md`, `plan.md`, and `tasks.md` (and `validation-report.md` when present).
+* Do **not** require `quickstart.md`, `open-questions.md`, or `out-of-scope-notes.md` — Open Questions live in the triad when needed.
 * Search for source files, tests, configuration, CI/CD files, package manifests, dependency manifests, environment examples, and documentation.
 * Review code changes if a git repository exists by inspecting the working tree and relevant diffs.
 * If no source code exists, state exactly what search was performed and mark implementation, code quality, testing, build, lint, deployment, and PR readiness as missing evidence or not verified as appropriate.

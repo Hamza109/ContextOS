@@ -68,11 +68,13 @@
 ```text
 specs/[###-feature]/
 ├── plan.md              # This file (/speckit-plan command output)
-├── research.md          # Phase 0 output (/speckit-plan command)
-├── data-model.md        # Phase 1 output (/speckit-plan command)
-├── quickstart.md        # Phase 1 output (/speckit-plan command)
-├── contracts/           # Phase 1 output (/speckit-plan command)
+├── research.md          # Optional Phase 0 (skip unless needed)
+├── data-model.md        # Optional Phase 1 (skip unless needed)
+├── contracts/           # Optional Phase 1 (skip unless needed)
 └── tasks.md             # Phase 2 output (/speckit-tasks command - NOT created by /speckit-plan)
+
+# Do NOT create by default (lean Spec Kit): quickstart.md, open-questions.md, out-of-scope-notes.md
+# Put Open Questions and Out of Scope inside spec.md / plan.md instead.
 ```
 
 ### Source Code (repository root)

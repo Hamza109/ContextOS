@@ -100,7 +100,7 @@ If `.specify/templates/tasks-template.md` exists, preserve its required sections
 
 **Input**: Design documents from `/specs/[###-feature-name]/`
 
-**Prerequisites**: plan.md, spec.md, and any available research.md, data-model.md, contracts/, or quickstart.md.
+**Prerequisites**: plan.md, spec.md, and any available research.md, data-model.md, or contracts/. Do **not** require or create `quickstart.md`, `open-questions.md`, or `out-of-scope-notes.md` (keep OQs / OOS inside spec.md and plan.md).
 
 **Tests**: Include test tasks when required by the specification, implementation plan, or project constitution. This project's constitution requires unit, integration, E2E, and acceptance verification where applicable.
 

@@ -166,6 +166,8 @@ Before passing context to either sub-agent, append state to:
 .cursor/agent-handoffs/handoff.md
 ```
 
+**Lean handoffs:** ≤40 lines per block; cite paths instead of pasting large docs. Do not generate Spec Kit adjuncts (`quickstart.md`, standalone `open-questions.md`, `out-of-scope-notes.md`).
+
 Use this exact format:
 
 ```markdown
