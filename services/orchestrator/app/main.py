@@ -1,4 +1,4 @@
-"""ContextOS FastAPI orchestrator entrypoint (EP-001 + EP-002 L5)."""
+"""ContextOS FastAPI orchestrator entrypoint (EP-001 + EP-002 L5 + EP-003 L3 enrichment)."""
 
 from __future__ import annotations
 
@@ -24,13 +24,18 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(
     title="ContextOS Orchestrator",
-    version="0.2.0",
+    version="0.3.0",
     description=(
-        "EP-001 L5 Repository Packing & Indexing + EP-002 Hybrid Search & Phase Packing. "
-        "Confirmed POST /index and POST /context fields only; "
-        "Proposed extensions (phase OQ-16, citation interim OQ-11, status codes) labeled. "
+        "EP-001 L5 Repository Packing & Indexing + EP-002 Hybrid Search & Phase Packing "
+        "+ EP-003 L3 Symbol (Serena) Pack Context enrichment. "
+        "Confirmed Appendix D HTTP only: GET /, POST /index, POST /context "
+        "(+ health). No Confirmed L3 symbol REST (api-contract §3; MCP-first Option A; "
+        "OQ-Symbol-REST open). "
+        "Proposed: Serena MCP knobs; safe-edit delimited block inside final_context "
+        "(OQ-Safe-Edit-Shape); citation XML attributes (OQ-11). "
         "Local embeddings only on index path; no external LLM exfil. "
-        "Out of scope: Serena/L3, L1 blast, L4 Headroom product, L2/L6, CLI epic, extension DX."
+        "Out of scope: Confirmed symbol REST, L1 blast, L4 Headroom product, L2/L6, "
+        "rename execution sandbox, full EP-004 CLI/Ask, JetBrains, extension DX."
     ),
     lifespan=lifespan,
 )

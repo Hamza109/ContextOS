@@ -27,11 +27,29 @@ services:
       # Proposed: local inference hook (Ollama) — query-time only, not indexing
       CONTEXTOS_LOCAL_INFERENCE_URL: http://host.docker.internal:11434
       CONTEXTOS_PACK_CACHE_DIR: /var/contextos/packs
+      # Proposed EP-003 Serena (OQ-Symbol-REST / SDK pin open — not Confirmed freeze)
+      CONTEXTOS_SERENA_ENABLED: "true"
+      CONTEXTOS_SERENA_USE_TEST_DOUBLE: "true"
+      CONTEXTOS_CONTEXT_SAFE_EDIT_ENRICHMENT: "true"
     volumes:
       - pack_cache:/var/contextos/packs
       # Mount host repos at runtime as needed, e.g. -v /path/to/repo:/repos/myrepo
     depends_on:
       - qdrant
+
+  # --- EP-003 Proposed: local Serena MCP for orchestrator Pack Context enrichment ---
+  # Serena is typically a host-local MCP process (ADR-005), not a required Compose service.
+  # Proposed knobs on `api` (not Confirmed freeze):
+  #   CONTEXTOS_SERENA_ENABLED=true
+  #   CONTEXTOS_SERENA_COMMAND=<serena-mcp-launch>   # SDK pin NEEDS CLARIFICATION
+  #   CONTEXTOS_SERENA_USE_TEST_DOUBLE=1             # fixtures / degraded without live MCP
+  #   CONTEXTOS_CONTEXT_SAFE_EDIT_ENRICHMENT=true
+  # Full Ask E2E / EP-004 CLI not required for this smoke note (T080).
+  # Optional future profile example (commented — do not invent Confirmed image pin):
+  # serena:
+  #   profiles: ["with-serena"]
+  #   image: # NEEDS CLARIFICATION — no invented Serena image pin
+  #   network_mode: host
 
 volumes:
   qdrant_data:

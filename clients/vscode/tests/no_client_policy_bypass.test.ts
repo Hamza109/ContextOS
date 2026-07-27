@@ -1,11 +1,13 @@
 /**
- * T050 / T056 / FR-014: extension must not pack locally or bypass backend policy.
- * Static checklist over clients/vscode/src — no ignore/consent/pack/embed logic.
+ * T050 / T056 / T017 / T062 / T072 / T073:
+ * Extension must not pack locally, bypass backend policy, or reimplement symbol policy.
+ * Static checklist over clients/vscode/src — policy stays FastAPI-only (SC-008).
  */
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { postIndex } from "../src/api/indexClient";
+import { postContext } from "../src/api/contextClient";
 import { createMockFetch } from "./helpers";
 
 const SRC_ROOT = path.resolve(__dirname, "../src");
@@ -23,7 +25,14 @@ function walkTsFiles(dir: string): string[] {
   return out;
 }
 
-describe("no_client_policy_bypass (T050/T056)", () => {
+function stripComments(text: string): string {
+  return text
+    .split("\n")
+    .filter((line) => !line.trim().startsWith("//") && !line.trim().startsWith("*"))
+    .join("\n");
+}
+
+describe("no_client_policy_bypass (T050/T056/T017/SC-008)", () => {
   it("source tree does not implement pack / ignore / consent / embed policy", () => {
     const files = walkTsFiles(SRC_ROOT);
     expect(files.length).toBeGreaterThan(0);
@@ -38,13 +47,7 @@ describe("no_client_policy_bypass (T050/T056)", () => {
 
     const violations: string[] = [];
     for (const file of files) {
-      const text = fs.readFileSync(file, "utf8");
-      // Allow comments that say we do NOT implement these
-      const stripped = text
-        .split("\n")
-        .filter((line) => !line.trim().startsWith("//") && !line.trim().startsWith("*"))
-        .join("\n");
-
+      const stripped = stripComments(fs.readFileSync(file, "utf8"));
       for (const { re, why } of forbiddenPatterns) {
         if (re.test(stripped)) {
           violations.push(`${path.relative(SRC_ROOT, file)}: ${why} (${re})`);
@@ -52,6 +55,27 @@ describe("no_client_policy_bypass (T050/T056)", () => {
       }
     }
 
+    expect(violations, violations.join("\n")).toEqual([]);
+  });
+
+  it("source tree does not reimplement symbol policy / local symbol graph (T017/SC-008)", () => {
+    const files = walkTsFiles(SRC_ROOT);
+    const forbiddenPatterns: Array<{ re: RegExp; why: string }> = [
+      { re: /SymbolService|l3_symbol|filter_references_by_file_type/, why: "orchestrator symbol policy" },
+      { re: /buildSymbolGraph|localSymbolIndex|symbolGraph\s*=/, why: "local symbol graph/index" },
+      { re: /hybrid_search|l5_search|embedAndSearch/i, why: "client-side search" },
+      { re: /compose_safe_edit_plan|attach_safe_edit_plan/, why: "server safe-edit composition" },
+    ];
+
+    const violations: string[] = [];
+    for (const file of files) {
+      const stripped = stripComments(fs.readFileSync(file, "utf8"));
+      for (const { re, why } of forbiddenPatterns) {
+        if (re.test(stripped)) {
+          violations.push(`${path.relative(SRC_ROOT, file)}: ${why} (${re})`);
+        }
+      }
+    }
     expect(violations, violations.join("\n")).toEqual([]);
   });
 
@@ -76,7 +100,6 @@ describe("no_client_policy_bypass (T050/T056)", () => {
       {
         repo_path: "/repo",
         repo_name: "repo",
-        // Proposed scope — paths only, not file contents
         files: ["src/a.ts"],
       },
       { fetchImpl },
@@ -90,14 +113,68 @@ describe("no_client_policy_bypass (T050/T056)", () => {
     expect(JSON.stringify(body)).not.toMatch(/function |class |import /);
   });
 
-  it("checklist: policy ownership remains FastAPI-only", () => {
+  it("context client only POSTs to /context with Confirmed fields (T062)", async () => {
+    let url = "";
+    let body: Record<string, unknown> = {};
+    const fetchImpl = createMockFetch(async (u, init) => {
+      url = u;
+      body = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
+      return new Response(
+        JSON.stringify({
+          final_context: "x",
+          metrics: {
+            tokens_raw: 1,
+            tokens_compacted: 1,
+            reduction_pct: 0,
+            latency_ms: 1,
+          },
+          blast_radius: [],
+          memory: [],
+          relevant_files: [],
+          is_real: true,
+        }),
+        { status: 200 },
+      );
+    });
+
+    await postContext(
+      "http://orchestrator.test/",
+      { query: "q", file: "a.ts", repo: "r", top_k: 5 },
+      { fetchImpl },
+    );
+
+    expect(url).toBe("http://orchestrator.test/context");
+    expect(Object.keys(body).sort()).toEqual(["file", "query", "repo", "top_k"].sort());
+    expect(body).not.toHaveProperty("content");
+    expect(body).not.toHaveProperty("source_files");
+    expect(body).not.toHaveProperty("consent");
+  });
+
+  it("Pack/symbol paths do not open secret files client-side (T072)", () => {
+    const files = walkTsFiles(SRC_ROOT);
+    const forbidden = [/readFileSync\s*\(\s*['"].*\.env/, /openSync\s*\(\s*['"].*\.env/];
+    const violations: string[] = [];
+    for (const file of files) {
+      const stripped = stripComments(fs.readFileSync(file, "utf8"));
+      for (const re of forbidden) {
+        if (re.test(stripped)) {
+          violations.push(`${path.relative(SRC_ROOT, file)}: ${re}`);
+        }
+      }
+    }
+    expect(violations, violations.join("\n")).toEqual([]);
+  });
+
+  it("checklist: policy ownership remains FastAPI-only (T073)", () => {
     const checklist = [
-      "Extension triggers POST /index only",
+      "Extension triggers POST /index only for indexing",
+      "Pack Context triggers POST /context only",
+      "Symbol DX uses Serena MCP client — no local symbol policy",
       "No local pack/flatten",
-      "No client .gitignore / hard-exclude application",
-      "No consent UX (OQ-US016 open)",
-      "No embedding or Qdrant client in extension",
+      "No client exclusion / consent application",
+      "No embedding or vector store client in extension",
+      "No rename execution / ContextOS sandbox UX",
     ];
-    expect(checklist.length).toBe(5);
+    expect(checklist.length).toBe(7);
   });
 });
