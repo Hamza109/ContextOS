@@ -159,7 +159,7 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX Observability verification for logs, metrics, traces, token/cost telemetry, latency, recall, or graph metrics where applicable
 - [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
 - [ ] TXXX Security hardening
-- [ ] TXXX Run quickstart.md validation
+- [ ] TXXX Smoke validation of core flows (API/CLI/extension as applicable) — do **not** require quickstart.md
 
 ---
 

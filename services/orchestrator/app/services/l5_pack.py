@@ -110,7 +110,7 @@ def _persist_pack(settings: Settings, repo_name: str, xml_content: str) -> Path 
     try:
         cache_dir = Path(settings.pack_cache_dir)
         cache_dir.mkdir(parents=True, exist_ok=True)
-        safe = re.sub(r"[^\w.\-]+", "_", repo_name) or "repo"
+        safe = _safe_repo_key(repo_name)
         digest = hashlib.sha256(xml_content.encode("utf-8")).hexdigest()[:12]
         out = cache_dir / f"{safe}.pack.xml"
         out.write_text(xml_content, encoding="utf-8")
@@ -119,3 +119,41 @@ def _persist_pack(settings: Settings, repo_name: str, xml_content: str) -> Path 
         return out
     except OSError:
         return None
+
+
+def _safe_repo_key(repo_name: str) -> str:
+    return re.sub(r"[^\w.\-]+", "_", repo_name) or "repo"
+
+
+def pack_cache_path(repo_name: str, *, settings: Settings | None = None) -> Path:
+    """Proposed path for cached pack XML keyed by repo_name (OQ-PACK)."""
+    cfg = settings or get_settings()
+    return Path(cfg.pack_cache_dir) / f"{_safe_repo_key(repo_name)}.pack.xml"
+
+
+def load_pack_by_repo(
+    repo_name: str,
+    *,
+    settings: Settings | None = None,
+) -> PackResult | None:
+    """Load Proposed PackResult / cache by repo_name for search/packing consumers (T013).
+
+    Field inventory remains **Proposed only** (OQ-PACK) — do not Confirmed-freeze.
+    """
+    cfg = settings or get_settings()
+    path = pack_cache_path(repo_name, settings=cfg)
+    if not path.is_file():
+        return None
+    try:
+        xml_content = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    # Reconstruct minimal Proposed PackResult from cache (files_* unknown → 0)
+    return PackResult(
+        repo_name=repo_name,
+        xml_content=xml_content,
+        token_count=estimate_tokens(xml_content),
+        files_packed=xml_content.count("<file "),
+        files_excluded=0,
+        artifact_path=path,
+    )

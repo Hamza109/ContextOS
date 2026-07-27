@@ -156,6 +156,8 @@ Before passing context to another sub-agent session, write or append state to:
 
 If the folder does not exist, create it.
 
+**Lean handoffs (token control):** Keep each handoff block ≤40 lines. Prefer a short feature brief at `.cursor/agent-handoffs/<feature>-brief.md` for long checklists. Do not require or generate `quickstart.md`, `open-questions.md`, or `out-of-scope-notes.md` — keep OQs/OOS in spec.md/plan.md. Do not invent Confirmed freezes.
+
 Always append a handoff block using this exact structure:
 
 ```markdown

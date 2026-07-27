@@ -124,6 +124,102 @@ class QdrantStore:
             total += self.upsert_chunks(sub_chunks, sub_vecs, content_hashes=sub_hashes)
         return total
 
+    def ensure_payload_indexes(self) -> None:
+        """Proposed payload index on repo_name (and file_path) for filtered search latency."""
+        from qdrant_client.http import models as qm
+
+        self.ensure_collection()
+        client = self._get_client()
+        name = self.settings.qdrant_collection
+        for field in ("repo_name", "file_path"):
+            try:
+                client.create_payload_index(
+                    collection_name=name,
+                    field_name=field,
+                    field_schema=qm.PayloadSchemaType.KEYWORD,
+                )
+            except Exception as exc:  # noqa: BLE001
+                # Index may already exist — ignore
+                logger.debug("payload index %s: %s", field, exc)
+
+    def search(
+        self,
+        query_vector: list[float],
+        *,
+        repo_name: str,
+        limit: int = 20,
+        file_path: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Filtered vector search by repo_name; optional file_path bias (Proposed)."""
+        from qdrant_client.http import models as qm
+
+        if len(query_vector) != self.settings.embedding_dim:
+            raise ValueError(
+                f"query vector dim {len(query_vector)} != {self.settings.embedding_dim}"
+            )
+        self.ensure_collection()
+        self.ensure_payload_indexes()
+        client = self._get_client()
+
+        must: list[qm.FieldCondition] = [
+            qm.FieldCondition(key="repo_name", match=qm.MatchValue(value=repo_name)),
+        ]
+        if file_path:
+            # Proposed soft bias: prefer exact file when provided; still allow repo-wide
+            # by running exact-file filter first, then falling back to repo-wide.
+            try:
+                exact = client.search(
+                    collection_name=self.settings.qdrant_collection,
+                    query_vector=query_vector,
+                    query_filter=qm.Filter(
+                        must=must
+                        + [
+                            qm.FieldCondition(
+                                key="file_path", match=qm.MatchValue(value=file_path)
+                            )
+                        ]
+                    ),
+                    limit=max(1, min(limit, 10)),
+                    with_payload=True,
+                )
+            except Exception:  # noqa: BLE001
+                exact = []
+        else:
+            exact = []
+
+        results = client.search(
+            collection_name=self.settings.qdrant_collection,
+            query_vector=query_vector,
+            query_filter=qm.Filter(must=must),
+            limit=limit,
+            with_payload=True,
+        )
+
+        # Merge exact-file hits first (Proposed bias), then repo-wide
+        merged: list[Any] = list(exact) + [r for r in results if r not in exact]
+        out: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for r in merged:
+            payload = r.payload or {}
+            key = f"{payload.get('file_path')}:{payload.get('chunk_index')}"
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(
+                {
+                    "id": str(r.id),
+                    "score": float(r.score or 0.0),
+                    "repo_name": payload.get("repo_name"),
+                    "file_path": payload.get("file_path"),
+                    "content": payload.get("content"),
+                    "token_count": payload.get("token_count"),
+                    "chunk_index": payload.get("chunk_index"),
+                }
+            )
+            if len(out) >= limit:
+                break
+        return out
+
     def health(self) -> str:
         try:
             client = self._get_client()

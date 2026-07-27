@@ -61,7 +61,7 @@ Also inspect if present:
 - Existing accessibility notes
 - Existing screenshots or design references
 
-If no user-facing UI is required, generate a short `docs/design/ui-not-applicable.md` explaining the evidence.
+If no user-facing UI is required: do **not** generate design files or `docs/design/ui-not-applicable.md`. Report `UI/UX: N/A` with a one-line evidence cite in the handoff (lean Spec Kit rule) and stop.
 
 ---
 
