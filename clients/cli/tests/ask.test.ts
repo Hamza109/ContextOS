@@ -121,7 +121,7 @@ describe("CLI visible failure (T021 / NFR-006)", () => {
   });
 });
 
-describe("CLI thin-client boundary (T022 / SC-005)", () => {
+describe("CLI thin-client boundary (T022 / SC-005 + EP-005 T014 / FR-004 / SC-003)", () => {
   it("source tree has no local hybrid search / pack / symbol policy", () => {
     const files = fs
       .readdirSync(SRC_ROOT)
@@ -131,7 +131,8 @@ describe("CLI thin-client boundary (T022 / SC-005)", () => {
       /hybrid_search|l5_search|embedAndSearch/i,
       /pack_repository|l5_pack|Repomix|phase.?pack/i,
       /SymbolService|l3_symbol|buildSymbolGraph/i,
-      /ignore_policy|ConsentGate/i,
+      /ignore_policy|IgnorePolicy|ConsentGate/i,
+      /force_include|bypass_ignore|approved_override/i,
     ];
     const violations: string[] = [];
     for (const file of files) {
@@ -143,6 +144,18 @@ describe("CLI thin-client boundary (T022 / SC-005)", () => {
       }
     }
     expect(violations).toEqual([]);
+  });
+
+  it("EP-005: CLI cannot force-index excluded paths — no local IgnorePolicy / pack engine", () => {
+    const files = fs
+      .readdirSync(SRC_ROOT)
+      .filter((f) => f.endsWith(".ts"))
+      .map((f) => path.join(SRC_ROOT, f));
+    for (const file of files) {
+      const text = fs.readFileSync(file, "utf8");
+      expect(text).not.toMatch(/walk_allowed_files|HARD_EXCLUDE|SECRET_FILE_GLOBS/);
+      expect(text).not.toMatch(/POST\s*\/index|postIndex/);
+    }
   });
 
   it("postContext POSTs Confirmed fields only", async () => {

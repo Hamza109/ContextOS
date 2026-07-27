@@ -1,0 +1,17 @@
+---
+description: Always use Graphify query before code exploration to reduce tokens
+alwaysApply: true
+---
+
+# Graphify First
+
+For every task that needs codebase context in this repo:
+
+1. **Before** Read / Grep / Glob / broad exploration of application or specs code, run:
+   ```bash
+   graphify query "<focused question>" --budget 1500
+   ```
+2. Prefer `graphify explain "Node"` and `graphify path "A" "B"` for targeted follow-ups.
+3. **Do not** dump `graphify-out/graph.html` into chat as default context — it is a visualization only.
+4. After substantive code changes: `graphify update .` (use unrestricted permissions if the sandbox blocks rebuild).
+5. Instruct delegated subagents to follow the same Graphify-first rule.

@@ -1,7 +1,9 @@
 /**
- * T050 / T056 / T017 / T062 / T072 / T073:
+ * T050 / T056 / T017 / T062 / T072 / T073 + EP-005 T013 / SC-003 / FR-004:
  * Extension must not pack locally, bypass backend policy, or reimplement symbol policy.
  * Static checklist over clients/vscode/src — policy stays FastAPI-only (SC-008).
+ * EP-005: no local ignore/pack/upload of excluded paths; indexClient / auto-index
+ * only call orchestrator (US-016 consent product OOS — cite only).
  */
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
@@ -177,6 +179,39 @@ describe("no_client_policy_bypass (T050/T056/T017/SC-008)", () => {
       "No rename execution / ContextOS sandbox UX",
     ];
     expect(checklist.length).toBe(8);
+  });
+
+  it("EP-005 SC-003: indexClient cannot force-include excluded paths around orchestrator", async () => {
+    let body: Record<string, unknown> = {};
+    const fetchImpl = createMockFetch(async (_url, init) => {
+      body = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
+      return new Response(
+        JSON.stringify({
+          files_indexed: 0,
+          graph_nodes: 0,
+          embeddings: 0,
+          time_ms: 1,
+        }),
+        { status: 200 },
+      );
+    });
+
+    await postIndex(
+      "http://orchestrator.test",
+      {
+        repo_path: "/repo",
+        repo_name: "repo",
+        // Client may *request* paths; orchestrator IgnorePolicy still owns exclusion.
+        files: [".env", "node_modules/x.js", "src/ok.ts"],
+      },
+      { fetchImpl },
+    );
+
+    expect(body).not.toHaveProperty("override");
+    expect(body).not.toHaveProperty("force_include");
+    expect(body).not.toHaveProperty("bypass_ignore");
+    expect(body).not.toHaveProperty("content");
+    expect(JSON.stringify(body)).not.toMatch(/API_KEY=|BEGIN RSA PRIVATE KEY/);
   });
 
   it("Ask ContextOS source must not reimplement pack/search/symbol/ignore/consent (T037)", () => {
