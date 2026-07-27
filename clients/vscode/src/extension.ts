@@ -2,7 +2,7 @@
  * ContextOS VS Code extension entry (EP-001 indexing + EP-003 L3 DX).
  *
  * Owns DX only: activation auto-index, progress, client cancel, save re-index,
- * Serena MCP hover/commands, Pack Context → POST /context.
+ * Serena MCP hover/commands, Pack Context + Ask ContextOS → POST /context.
  * FastAPI owns pack / ignore / consent / embed / Qdrant / symbol policy —
  * never reimplemented here.
  */
@@ -17,10 +17,12 @@ import { resolvePrimaryWorkspace } from "./indexing/workspace";
 import { SerenaMcpClient } from "./mcp/serenaClient";
 import { createSerenaHoverProvider } from "./providers/hoverProvider";
 import {
+  ASK_CONTEXT_COMMAND,
   DEFINITION_LOOKUP_COMMAND,
   FIND_REFERENCES_COMMAND,
   PACK_CONTEXT_COMMAND,
   RENAME_SCOPE_COMMAND,
+  runAskContext,
   runDefinitionLookup,
   runFindReferences,
   runPackContext,
@@ -190,6 +192,28 @@ export function activate(context: vscode.ExtensionContext): void {
         showWarningMessage: showWarn,
         showErrorMessage: showError,
         presentReport,
+      });
+    }),
+  );
+
+  // --- EP-004 US-008 Ask ContextOS (Proposed ID contextos.askContext) ---
+  context.subscriptions.push(
+    vscode.commands.registerCommand(ASK_CONTEXT_COMMAND, async () => {
+      await runAskContext({
+        getConfig,
+        getEditor: () => vscode.window.activeTextEditor,
+        workspaceFolders: () => vscode.workspace.workspaceFolders,
+        showInputBox: (options) => vscode.window.showInputBox(options),
+        showInformationMessage: showInfo,
+        showWarningMessage: showWarn,
+        showErrorMessage: showError,
+        presentReport,
+        logLatency: (wallMs, serverLatencyMs) => {
+          // Proposed obs names (T046) — SC-004 Pass blocked (OQ-IDE-2s-Harness / T039)
+          const line = `[ContextOS][obs][ask] wall_ms=${wallMs} server_latency_ms=${serverLatencyMs}`;
+          console.log(line);
+          outputChannel?.appendLine(line);
+        },
       });
     }),
   );

@@ -21,3 +21,7 @@ export {
   extractSafeEditSection,
   SAFE_EDIT_BLOCK_MARKER,
 } from "./packContextPresenter";
+export {
+  formatAskContextReport,
+  formatRelevantFiles,
+} from "./askContextPresenter";

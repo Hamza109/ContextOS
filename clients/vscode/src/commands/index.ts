@@ -13,4 +13,13 @@ export {
   buildContextRequest,
   DEFAULT_PACK_TOP_K,
 } from "./packContext";
+export {
+  ASK_CONTEXT_COMMAND,
+  runAskContext,
+  buildAskContextRequest,
+  DEFAULT_ASK_TOP_K,
+  ASK_ERROR_UNREACHABLE,
+  ASK_ERROR_HTTP,
+  ASK_LATENCY_LOG_PREFIX,
+} from "./askContext";
 export { snapshotActiveEditor, toSymbolPosition } from "./editorContext";
