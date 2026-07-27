@@ -33,10 +33,27 @@
       {
         "command": "contextos.packContext",
         "title": "ContextOS: Pack Context"
+      },
+      {
+        "command": "contextos.askContext",
+        "title": "ContextOS: Ask ContextOS"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "contextos.askContext",
+        "key": "ctrl+shift+;",
+        "mac": "cmd+shift+;",
+        "when": "workspaceFolderCount > 0"
       }
     ],
     "menus": {
       "editor/context": [
+        {
+          "command": "contextos.askContext",
+          "group": "contextos@0",
+          "when": "editorTextFocus"
+        },
         {
           "command": "contextos.packContext",
           "group": "contextos@1",

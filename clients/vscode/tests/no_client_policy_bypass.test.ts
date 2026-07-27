@@ -169,12 +169,27 @@ describe("no_client_policy_bypass (T050/T056/T017/SC-008)", () => {
     const checklist = [
       "Extension triggers POST /index only for indexing",
       "Pack Context triggers POST /context only",
+      "Ask ContextOS triggers POST /context only (EP-004 US-008)",
       "Symbol DX uses Serena MCP client — no local symbol policy",
       "No local pack/flatten",
       "No client exclusion / consent application",
       "No embedding or vector store client in extension",
       "No rename execution / ContextOS sandbox UX",
     ];
-    expect(checklist.length).toBe(7);
+    expect(checklist.length).toBe(8);
+  });
+
+  it("Ask ContextOS source must not reimplement pack/search/symbol/ignore/consent (T037)", () => {
+    const askFiles = [
+      path.join(SRC_ROOT, "commands/askContext.ts"),
+      path.join(SRC_ROOT, "providers/askContextPresenter.ts"),
+    ];
+    for (const file of askFiles) {
+      expect(fs.existsSync(file), file).toBe(true);
+      const stripped = stripComments(fs.readFileSync(file, "utf8"));
+      expect(stripped).toMatch(/postContext|ContextResponse|final_context/);
+      expect(stripped).not.toMatch(/pack_repository|l5_pack|hybrid_search|IgnorePolicy|ConsentGate/i);
+      expect(stripped).not.toMatch(/SymbolService|buildSymbolGraph|embedAndSearch/i);
+    }
   });
 });

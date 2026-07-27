@@ -1,0 +1,25 @@
+{
+  "name": "@contextos/cli",
+  "version": "0.1.0",
+  "description": "ContextOS CLI — thin client for POST /context (Proposed packaging; OQ-CLI-Packaging).",
+  "bin": {
+    "contextos": "./dist/bin.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -p ./",
+    "contextos": "tsx src/bin.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc -p ./ --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.6.0"
+  }
+}
