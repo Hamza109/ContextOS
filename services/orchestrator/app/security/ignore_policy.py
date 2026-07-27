@@ -1,6 +1,8 @@
-"""Ignore / hard-exclusion policy for repository walks (FR-010, FR-011, FR-012).
+"""Ignore / hard-exclusion policy for repository walks (FR-010..FR-012; EP-005 FR-001..FR-003).
 
-No override path until OQ-OVERRIDE is clarified.
+No override path until OQ-OVERRIDE is clarified — defaults stay enforced (SC-002).
+Secret-glob inventory may extend without inventing Confirmed override UX (T020).
+US-016 query-time LLM consent is out of scope (cite only).
 """
 
 from __future__ import annotations

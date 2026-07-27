@@ -794,3 +794,384 @@ Artifacts Created or Updated: review-report.md; clients/cli; VS Code Ask; briefs
 
 - OQ-10, OQ-IDE-2s-Harness (Pass only); live e2e optional
 
+
+---
+
+## Handoff: spec-writer complete
+
+Date: 2026-07-28
+
+Feature: ep-005-privacy-health-consent
+
+Branch: feature/ep-005-privacy-health-consent
+
+Source Input: ep-005-brief; US-013; US-014; constitution III/V; ADR-012; api-contract §2.1; BRD §10 / Appendix C/D
+
+Artifacts Created or Updated: specs/ep-005-privacy-health-consent/spec.md only
+
+### What was completed
+
+- Spec Kit `spec.md` for US-013 + US-014 (US-016 explicitly OOS)
+- Privacy defaults + GET / health + graceful degraded search; Proposed vs Confirmed labeled
+- Cite-only EP-001/002/004; no plan/tasks/validation/adjuncts
+
+### What failed
+
+- None
+
+### Next instructions
+
+- plan-generator → plan.md (lean; gap-fill vs IgnorePolicy/health/l5_search)
+- Stay on feature/ep-005-privacy-health-consent; no push/merge to main
+
+### Blocking / Proposed (carry forward)
+
+- OQ-OVERRIDE (no Confirmed override UX)
+- OQ-HTTP-Health / OQ-Degraded-Shape (Proposed only)
+- OQ-Uptime-Harness (blocks 99.5% Pass claims)
+- US-016 deferred
+
+
+---
+
+## Handoff: plan-generator complete
+
+Date: 2026-07-28
+
+Feature: ep-005-privacy-health-consent
+
+Branch: feature/ep-005-privacy-health-consent
+
+Source Input: specs/ep-005-privacy-health-consent/spec.md; ep-005-brief.md
+
+Artifacts Created or Updated: specs/ep-005-privacy-health-consent/plan.md
+
+### What was completed
+
+- Lean plan.md: gap-fill vs IgnorePolicy / GET / / l5_search; US-013+US-014 only
+- Proposed vs Confirmed labeled; no Confirmed freeze of open OQs
+- Cite EP-001/002/004; no L5/L3/CLI rebuild; clients no-bypass
+
+### What failed
+
+- None
+
+### Next instructions
+
+- task-generator → tasks.md (lean; gap-fill + acceptance tests only)
+- Stay on feature/ep-005-privacy-health-consent; no push/merge to main
+
+### Blocking / Proposed (carry forward)
+
+- OQ-OVERRIDE (no Confirmed override UX)
+- OQ-HTTP-Health / OQ-Degraded-Shape (Proposed only)
+- OQ-Uptime-Harness (blocks 99.5% Pass claims)
+- US-016 deferred
+
+
+---
+
+## Handoff: task-generator complete
+
+Date: 2026-07-28
+
+Feature: ep-005-privacy-health-consent
+
+Branch: feature/ep-005-privacy-health-consent
+
+Source Input: specs/ep-005-privacy-health-consent/spec.md + plan.md; ep-005-brief.md
+
+Artifacts Created or Updated: specs/ep-005-privacy-health-consent/tasks.md
+
+### What was completed
+
+- tasks.md: T001–T036 across 5 phases (Setup, Foundational, US-013, US-014, Polish)
+- Gap-fill only; tests for ignore e2e, client no-bypass, GET / fields, A-07, degraded search
+- OQs carried Proposed (OVERRIDE, HTTP-Health, Degraded-Shape, Uptime-Harness blocks SC-007 Pass)
+
+### What failed
+
+- None
+
+### Next instructions
+
+- test-validation-agent → validation-report.md
+- Stay on feature/ep-005-privacy-health-consent; no push/merge to main
+
+### Blocking / Proposed (carry forward)
+
+- OQ-OVERRIDE (no Confirmed override UX)
+- OQ-HTTP-Health / OQ-Degraded-Shape (Proposed only)
+- OQ-Uptime-Harness (blocks 99.5% Pass claims)
+- US-016 deferred
+
+
+---
+
+## Handoff: test-validation-agent complete
+
+Date: 2026-07-28
+
+Feature: ep-005-privacy-health-consent
+
+Branch: feature/ep-005-privacy-health-consent
+
+Source Input: specs/ep-005-privacy-health-consent/{spec,plan,tasks}.md; ep-005-brief.md; constitution; backlog EP-005/US-013/US-014/A-07; api-contract §2.1; ADR-012
+
+Artifacts Created or Updated: specs/ep-005-privacy-health-consent/validation-report.md
+
+### What was completed
+
+- Planning validation only (no test execution / Pass-Fail invent)
+- Decision: Conditionally Approved — Overall 8.8/10
+- Ready for implementation: Yes (conditions)
+- Scope OK: US-013+US-014; US-016 OOS; gap-fill vs EP-001/002/004
+- Traceability FR/SC → plan → T001–T036 complete; SC-007 Pass blocked
+
+### What failed
+
+- None (triad complete; no critical rewrite)
+
+### Next instructions
+
+- lead-developer-agent → implement gap-fill + acceptance per tasks.md
+- Stay on feature/ep-005-privacy-health-consent; no push/merge to main
+- Do not Confirmed-freeze open OQs; no SC-007 Pass without harness
+
+### Blocking / Proposed (carry forward)
+
+- OQ-OVERRIDE (no Confirmed override UX)
+- OQ-HTTP-Health / OQ-Degraded-Shape (Proposed only)
+- OQ-Uptime-Harness (blocks 99.5% / SC-007 Pass)
+- Clients MUST NOT bypass orchestrator ignore policy
+- GET /: Confirmed fields + A-07 Falkor unused OK
+- US-016 deferred
+
+
+---
+
+## Handoff: lead-developer-agent start
+
+Date: 2026-07-28
+
+Feature: ep-005-privacy-health-consent
+
+Task IDs: T001–T036 (US-013, US-014)
+
+Source Input: Spec Kit Conditionally Approved 8.8/10; ep-005-brief.md
+
+Artifacts Reviewed: spec.md, plan.md, tasks.md, validation-report.md, constitution III/V, api-contract §2.1, ADR-012; graphify hubs IgnorePolicy/health/hybrid_search
+
+Artifacts Created or Updated: ep-005-backend-brief.md (this turn)
+
+### What was completed
+
+- Graphify pre-explore done; stay on `feature/ep-005-privacy-health-consent`
+- **UI/UX: N/A** — no user-facing UI for this Spec Kit (lean rule; no ui-not-applicable.md)
+- Implementation checklist → `.cursor/agent-handoffs/ep-005-backend-brief.md`
+- Next: backend-agent → testing-agent → review-pr-readiness-agent
+- OOS cite: US-016; no Confirmed freeze of open OQs; SC-007 Skip (OQ-Uptime-Harness)
+
+### What failed
+
+- None yet
+
+### Next instructions
+
+- backend-agent: gap-fill T001–T029 orchestrator + extend tests; Graphify-first before code Read/Grep/Glob; `graphify update .` after code
+- Clients: boundary-only if needed (vscode-extension-engineer light / CLI)
+- Prefer leave uncommitted; no push/merge to main
+
+### Blocking questions
+
+- None for start; carry OQ-OVERRIDE / OQ-HTTP-Health / OQ-Degraded-Shape / OQ-Uptime-Harness as Proposed
+
+---
+
+## Handoff: backend-agent → lead (EP-005 US-013/US-014)
+
+Date: 2026-07-28
+
+Feature: ep-005-privacy-health-consent
+
+Task IDs: T001–T012, T015–T017, T020–T029 (+ T013/T014 boundary)
+
+### What was completed
+
+- Graphify-first + `graphify update .` done
+- Gap-fill: acceptance tests + shared fixture; impl already OK (IgnorePolicy/walker/health/degrade)
+- OpenAPI health: Proposed HTTP labels (OQ-HTTP-Health); no Confirmed override
+- Client boundary tests extended (vscode + CLI); no DX rebuild
+- SC-007 explicitly skipped (OQ-Uptime-Harness); US-016 cite only
+
+### Tests
+
+- Orchestrator EP-005 suite: 24 passed
+- VS Code boundary: 8 passed; CLI ask: 12 passed
+- Regression hybrid + exclusions: passed
+
+### Branch
+
+- `feature/ep-005-privacy-health-consent` — leave uncommitted; no push
+
+### Next
+
+- testing-agent → review-pr-readiness-agent
+- Open OQs remain Proposed: OVERRIDE, HTTP-Health, Degraded-Shape, Uptime-Harness
+
+### Blocking
+
+- None for US-013/US-014 gap-fill
+
+
+---
+
+## Handoff: lead → testing-agent (EP-005)
+
+Date: 2026-07-28
+
+Feature: ep-005-privacy-health-consent
+
+Task IDs: T030–T036 (+ re-verify SC-001..SC-006, SC-008)
+
+Source Input: ep-005-testing-brief.md; backend handoff
+
+### What was completed
+
+- UI/UX: N/A (confirmed)
+- Backend + client boundary done; extension engineer skip (T013/T014 covered)
+- Checklist → `.cursor/agent-handoffs/ep-005-testing-brief.md`
+
+### Next instructions
+
+- testing-agent: Graphify-first; re-run EP-005 suites; SC-007 Skipped (OQ-Uptime-Harness); map SC evidence; ≤40-line handoff
+- Then review-pr-readiness → `specs/ep-005-privacy-health-consent/review-report.md` only
+- Stay on feature branch; leave uncommitted
+
+### Blocking questions
+
+- None; OQs stay Proposed
+
+
+---
+
+## Handoff: testing-agent → lead (EP-005)
+
+Date: 2026-07-28
+
+Feature: ep-005-privacy-health-consent
+
+Task IDs: T030–T036; SC-001..SC-006, SC-008; SC-007 Skipped
+
+### Counts
+
+- Planned: EP-005 orch + client boundary + EP-001/002 regression + T032/T033/T036
+- Executed: orch 25 passed; vscode bypass 8; CLI ask 12; regression 14 passed
+- Failed: 0
+- Skipped: **SC-007** only — reason **OQ-Uptime-Harness** (no 99.5% Pass)
+
+### SC matrix (executed)
+
+| SC | Result | Evidence |
+|----|--------|----------|
+| SC-001 | Pass | fixture packs+embeddings exclusions |
+| SC-002 | Pass | no override API / OQ-OVERRIDE open |
+| SC-003 | Pass | vscode 8 + CLI boundary |
+| SC-004 | Pass | GET / Confirmed fields |
+| SC-005 | Pass | A-07 Falkor unused ≠ error |
+| SC-006 | Pass | degraded POST /context + BM25 |
+| SC-007 | **Skipped** | OQ-Uptime-Harness |
+| SC-008 | Pass | HTTP/degraded asserts **Proposed** |
+
+### T032 / T033
+
+- Privacy: defaults enforced; no Confirmed override; clients no bypass; fixture placeholders only
+- Scope: no US-016 product, RBAC invent, JetBrains, L1/L4/L2/L6, EP-004 rebuild in EP-005 diff
+
+### Branch
+
+- `feature/ep-005-privacy-health-consent` — uncommitted; no push
+
+### Next
+
+- review-pr-readiness-agent → `review-report.md` only
+- OQs remain Proposed: OVERRIDE, HTTP-Health, Degraded-Shape, Uptime-Harness
+
+### Blocking
+
+- None for SC-001..SC-006, SC-008; SC-007 blocked on harness by design
+
+
+---
+
+## Handoff: review-pr-readiness-agent → lead (EP-005)
+
+Date: 2026-07-28
+
+Feature: ep-005-privacy-health-consent
+
+### What was completed
+
+- Graphify-first confirmed; spot-checked health/IgnorePolicy/fixture/contract/no-override
+- Wrote `specs/ep-005-privacy-health-consent/review-report.md` only (lean Spec Kit)
+- Verdict: **Yes with conditions** — 🟡 APPROVED WITH CONCERNS / READY FOR PR WITH COMMENTS
+- Score: **8.5 / 10**
+
+### Evidence cited (not re-run)
+
+- SC-001..SC-006, SC-008 Pass; SC-007 Skipped (OQ-Uptime-Harness)
+- orch 25 / vscode 8 / CLI 12 / regression 14 — testing-agent
+- UI/UX N/A; US-016 OOS
+
+### Conditions (not HIGH blockers if honored)
+
+1. Commit before PR; no Confirmed freeze of OQs
+2. No SC-007 / 99.5% Pass claim
+3. Remote CI Missing Evidence until push
+4. tasks.md checkboxes still open (handoffs substitute)
+
+### Open OQs (Proposed)
+
+- OQ-OVERRIDE, OQ-HTTP-Health, OQ-Degraded-Shape, OQ-Uptime-Harness
+
+### Branch
+
+- `feature/ep-005-privacy-health-consent` — **uncommitted**; no push
+
+### Next
+
+- Lead: commit (on request) → open PR with SC matrix + OQs in body
+- Blockers: none for in-scope US-013/US-014 under conditions
+
+
+---
+
+## Handoff: lead-developer-agent complete (EP-005)
+
+Date: 2026-07-28
+
+Feature: ep-005-privacy-health-consent
+
+Task IDs: T001–T036 orchestrated
+
+### What was completed
+
+- UI/UX: N/A; backend gap-fill; clients boundary in backend pass; testing; review-report
+- Graphify-first throughout; final `graphify update .` (3308 nodes)
+- Verdict: PR ready **Yes with conditions** (8.5/10)
+- Changes **uncommitted** on `feature/ep-005-privacy-health-consent`; **no main push**
+
+### What failed
+
+- None in-scope; SC-007 Skipped by design (OQ-Uptime-Harness)
+
+### Next instructions (parent)
+
+- Commit Spec Kit + impl/tests on feature branch
+- Push + open PR (carry OQs; no SC-007 Pass claim)
+- Do not merge to main until PR review
+
+### Blocking questions
+
+- None; OQs remain Proposed
+
