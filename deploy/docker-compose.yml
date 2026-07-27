@@ -1,0 +1,38 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.12.5
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  # FalkorDB optional for EP-001 — unused for graph writes (graph_nodes=0).
+  # Present so health can report degraded/unused without failing MVP indexing.
+  falkordb:
+    image: falkordb/falkordb:latest
+    profiles: ["with-falkor"]
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: ../services/orchestrator
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      CONTEXTOS_QDRANT_URL: http://qdrant:6333
+      CONTEXTOS_EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
+      # Proposed: local inference hook (Ollama) — query-time only, not indexing
+      CONTEXTOS_LOCAL_INFERENCE_URL: http://host.docker.internal:11434
+      CONTEXTOS_PACK_CACHE_DIR: /var/contextos/packs
+    volumes:
+      - pack_cache:/var/contextos/packs
+      # Mount host repos at runtime as needed, e.g. -v /path/to/repo:/repos/myrepo
+    depends_on:
+      - qdrant
+
+volumes:
+  qdrant_data:
+  pack_cache:

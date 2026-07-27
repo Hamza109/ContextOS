@@ -1,0 +1,42 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# Node / VS Code extension
+node_modules/
+clients/vscode/out/
+*.vsix
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+*.pem
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+!.vscode/extensions.json
+
+# Local / generated
+graphify-out/
+*.log
+.cache/
+
+# Model / pack caches (local)
+**/packs/
+*.bin

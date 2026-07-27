@@ -1,0 +1,91 @@
+@startuml ContextOS_Frontend_Architecture
+title ContextOS Frontend / Client Architecture\n(Confirmed: BRD §6, §14–§15; Constitution V)
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+
+actor Developer as Dev
+
+package "VS Code Extension — MVP Primary IDE" #DCFCE7 {
+  [Extension Host\nactivation · settings · secure storage for secrets] as ExtHost
+  [Commands\nAsk ContextOS · Pack Context · Index / Re-index] as Cmds
+  [Sidebar / Tree views] as Sidebar
+  [Status Bar\nindex state · degraded · progress] as Status
+  [Progress & Cancellation] as Progress
+  [Hover Provider\nL3 symbol docs] as Hover
+  [CodeLens\n(Proposed surface — FR-implied DX;\nspecific lenses NEEDS CLARIFICATION)] as CodeLens
+  [Offline / error states] as Offline
+
+  package "Webviews (presentation only)" {
+    [Blast Radius Panel\nV1 — React Flow] as BlastWV #FEF3C7
+    [Graph Explorer\nV1 — React Flow / vis-network] as GraphWV #FEF3C7
+    [Token Cost Dashboard\nV1 — contextos_token_dashboard] as TokenWV #FEF3C7
+    note bottom of BlastWV
+      MUST show provenance, freshness/staleness,
+      confidence, errors, safety warnings
+      (constitution V)
+    end note
+  }
+
+  [API Client\ntyped OpenAPI · auth headers\nmessage sanitize] as ApiClient
+}
+
+package "CLI — MVP" #DCFCE7 {
+  [contextos ask 'where is X?'] as AskCmd
+  [Index / status commands\n(Proposed verb set — Missing Evidence exact CLI taxonomy)] as OtherCmd
+  [Output formatters\nhuman + machine-readable when planned] as Fmt
+}
+
+package "JetBrains Extension" #FEE2E2 {
+  [Parity features — later\nTiming vs MVP: NEEDS CLARIFICATION] as JB
+}
+
+package "Static / Served UI from API" {
+  [graph.html vis-network\nGET /graph.html?repo=\nV1] as GraphHTML #FEF3C7
+}
+
+package "Backend (boundary)" #E2E8F0 {
+  [FastAPI Orchestrator] as API
+}
+
+Dev --> Cmds
+Dev --> Sidebar
+Dev --> AskCmd
+Dev --> JB
+Dev --> GraphHTML
+
+Cmds --> ExtHost
+Hover --> ExtHost
+CodeLens --> ExtHost
+BlastWV --> ExtHost
+GraphWV --> ExtHost
+TokenWV --> ExtHost
+Status --> ExtHost
+Progress --> ExtHost
+Offline --> ExtHost
+
+ExtHost --> ApiClient
+ApiClient --> API
+AskCmd --> Fmt
+Fmt --> API
+OtherCmd --> API
+JB --> API
+GraphHTML --> API
+
+note right of ApiClient
+  **Security (constitution III):**
+  Validate/sanitize Webview ↔ host messages
+  and backend responses.
+  Store secrets only via approved secure storage.
+  No silent bypass of consent / RBAC /
+  indexing policy / telemetry opt-out.
+end note
+
+legend right
+  |= Color |= Phase |
+  | <#DCFCE7> | MVP |
+  | <#FEF3C7> | V1 |
+  | <#FEE2E2> | Timing unclear |
+endlegend
+
+@enduml

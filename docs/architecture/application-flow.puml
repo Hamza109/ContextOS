@@ -1,0 +1,82 @@
+@startuml ContextOS_Application_Flow
+title ContextOS Application Flow — MVP / V1 / V2\n(Evidence: BRD §5, §14, §15, Appendix C/D)
+
+skinparam backgroundColor #FEFEFE
+skinparam activity {
+  BackgroundColor #E8EEF7
+  BorderColor #334155
+}
+skinparam NoteBackgroundColor #FFF8E7
+skinparam NoteBorderColor #B45309
+
+|Client Surfaces|
+start
+:Request arrives\n(IDE action / CLI query / CI webhook);
+note right
+  **Confirmed** surfaces: VS Code, CLI, GitHub Action
+  JetBrains: later / IN SCOPE — timing NEEDS CLARIFICATION
+end note
+
+|FastAPI Orchestrator|
+:GET / health check optional\n(falkor / qdrant / pipeline status);
+
+if (Operation?) then (index)
+  :POST /index {repo_path, repo_name};
+  |Indexer|
+  :Respect .gitignore; exclude .env,\nsecrets, build outputs, binaries;
+  partition "MVP — L5" {
+    :Flatten / chunk (Repomix-style);
+    :Embed locally all-MiniLM-L6-v2 384-dim;
+    :Upsert Qdrant collection=codebase;
+  }
+  partition "V1 — L1" {
+    :Parse AST tree-sitter / regex imports;
+    :Write File→Module→Class→Method→Call\nto FalkorDB;
+  }
+  partition "V2 — L2+L6" {
+    :Graphify multi-modal ingest\n(markdown, ADR, SQL, OpenAPI, images, Loom);
+    :Cognee-style entity memory upsert\n+ PII redaction;
+  }
+  :Return {files_indexed, graph_nodes,\nembeddings, time_ms};
+  stop
+
+else (context / ask)
+  :POST /context {query, file, repo, top_k};
+  
+  partition "V2 — Enrich & Recall" #E0F2FE {
+    :L6 Recall memories\n(source + timestamp explain);
+    :L2 Cross-artifact enrich;
+  }
+  
+  partition "MVP — Pack & Resolve" #DCFCE7 {
+    :L5 Hybrid search BM25 + vector\n+ MMR; top_k files;
+    :L3 Serena symbol resolve\n(definition / refs / hover scope);
+  }
+  
+  partition "V1 — Expand & Compress" #FEF3C7 {
+    :L1 Blast / dependency expand\n(FalkorDB N-hop);
+    :L4 Headroom relevance score,\nsummarize, enforce phase token budget;
+    :Emit compression telemetry (OTel);
+  }
+  
+  :Pack & Cite\nXML context + file:line + confidence;
+  note right
+    Query-time external LLM requires
+    explicit consent/configuration
+    (constitution III; BRD Appendix C)
+  end note
+  :Return {final_context, metrics,\nblast_radius?, memory?, relevant_files, is_real};
+  stop
+
+else (blast — V1)
+  :GET /blast/{file_name}?repo=;
+  :L1 transitive dependents, tests, owners, risk;
+  stop
+
+else (graph viz — V1)
+  :GET /graph.html?repo=;
+  :Serve vis-network interactive graph\nfrom FalkorDB;
+  stop
+endif
+
+@enduml

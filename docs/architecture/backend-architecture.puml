@@ -1,0 +1,113 @@
+@startuml ContextOS_Backend_Architecture
+title ContextOS Backend Architecture — FastAPI Orchestrator\n(Confirmed stack BRD §14; module split Proposed)
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+
+package "API Layer (Confirmed endpoints Appendix D)" {
+  [GET /] as EP_Health
+  [POST /index] as EP_Index
+  [POST /context] as EP_Context
+  [GET /blast/{file_name}] as EP_Blast
+  [GET /graph.html] as EP_Graph
+  note right of EP_Blast
+    **V1** — FR-08
+  end note
+  note right of EP_Graph
+    **V1** — FR-09
+  end note
+}
+
+package "Middleware / Cross-cutting (Proposed module names)" {
+  [Request validation] as MW_Val
+  [Security policy enforcement\nignore rules · consent · RBAC · PII] as MW_Sec
+  [OpenTelemetry spans & metrics] as MW_OTel
+  [Error handling / degraded mode] as MW_Err
+}
+
+package "Domain Services (Proposed packaging; responsibilities Confirmed)" {
+  package "MVP" #DCFCE7 {
+    [PackingService\nFR-01 flatten XML · token pre-calc] as S_Pack
+    [SearchService\nFR-02 BM25+vector · MMR] as S_Search
+    [PromptAssemblyService\nFR-03 phase templates] as S_Prompt
+    [SymbolService\nFR-04..06 via Serena MCP client] as S_Symbol
+  }
+  package "V1" #FEF3C7 {
+    [GraphIndexService\nFR-07 structural graph] as S_Graph
+    [BlastRadiusService\nFR-08] as S_Blast
+    [GraphVizService\nFR-09 graph.html] as S_Viz
+    [CompressionService\nFR-11..13 Headroom] as S_Comp
+  }
+  package "V2" #E0F2FE {
+    [MultiModalIngestService\nFR-14 Graphify] as S_MM
+    [CrossArtifactLinkService\nFR-15] as S_Link
+    [MemoryService\nFR-16..18 Cognee-style] as S_Mem
+  }
+}
+
+package "Adapters / Integrations" {
+  [Repomix-style packer] as A_Repo
+  [EmbeddingAdapter\nall-MiniLM-L6-v2 local CPU] as A_Emb
+  [QdrantClient] as A_Qdr
+  [FalkorDBClient] as A_Falk
+  [Serena MCP Client] as A_Ser
+  [CodeGraph / GitNexus / tree-sitter] as A_CG
+  [Headroom-style compressor] as A_HR
+  [Graphify-style ingest] as A_GF
+  [Cognee-style memory] as A_Cog
+  [codebase-memory-mcp\nFR-10 — boundary NEEDS CLARIFICATION] as A_CMM
+}
+
+database "Qdrant\ncodebase 384-dim" as DB_Q
+database "FalkorDB\nstructural (+ multi-modal V2)" as DB_F
+database "Memory store V2" as DB_M
+
+EP_Health --> MW_OTel
+EP_Index --> MW_Val
+EP_Context --> MW_Val
+EP_Blast --> MW_Val
+EP_Graph --> MW_Val
+
+MW_Val --> MW_Sec
+MW_Sec --> S_Pack
+MW_Sec --> S_Search
+MW_Sec --> S_Prompt
+MW_Sec --> S_Symbol
+MW_Sec --> S_Graph
+MW_Sec --> S_Blast
+MW_Sec --> S_Viz
+MW_Sec --> S_Comp
+MW_Sec --> S_MM
+MW_Sec --> S_Link
+MW_Sec --> S_Mem
+
+S_Pack --> A_Repo
+S_Search --> A_Emb
+S_Search --> A_Qdr
+S_Prompt --> S_Search
+S_Symbol --> A_Ser
+S_Graph --> A_CG
+S_Graph --> A_Falk
+S_Blast --> A_Falk
+S_Viz --> A_Falk
+S_Comp --> A_HR
+S_MM --> A_GF
+S_Link --> A_Falk
+S_Mem --> A_Cog
+S_Graph ..> A_CMM
+
+A_Qdr --> DB_Q
+A_Emb --> DB_Q
+A_Falk --> DB_F
+A_Cog --> DB_M
+
+MW_Err ..> MW_OTel
+
+note bottom
+  **Boundary rule (constitution V):** Orchestrator owns indexing/graph/search/
+  compression/memory/security/OpenAPI. Clients must not silently bypass validation.
+  Additional HTTP endpoints beyond Appendix D = **Proposed** only if FR-implied;
+  otherwise Not evidenced.
+end note
+
+@enduml
