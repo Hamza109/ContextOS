@@ -1,0 +1,98 @@
+@startuml ContextOS_System_Architecture
+title ContextOS System Architecture — Six Layers\n(Confirmed: BRD §14–§15; Constitution II–V)
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam packageStyle rectangle
+
+actor "Developer / PM / QA / SRE" as User
+actor "LLM Provider\n(Gemini / GPT-4 / Ollama)\nBYO — consent at query time" as LLM
+
+package "Client Surfaces" as Clients {
+  component "VS Code Extension\n(MVP primary IDE)" as VSCode #DCFCE7
+  component "CLI\ncontextos ask" as CLI #DCFCE7
+  component "JetBrains Extension\n(later — NEEDS CLARIFICATION timing)" as JB #FEE2E2
+  component "GitHub Action\n(CI webhook — contract Missing Evidence)" as GHA #FEF3C7
+  component "Webviews / Dashboards\ngraph.html · token dashboard\nReact Flow" as Viz #FEF3C7
+}
+
+package "ContextOS Orchestrator\nFastAPI + Python 3.11" as Orch {
+  component "OpenAPI / Health\nGET /" as Health
+  component "Indexing Service\nPOST /index" as IndexSvc
+  component "Context Pipeline\nPOST /context" as CtxSvc
+  component "Security Policy\n.gitignore · .env · consent · RBAC · PII" as Sec
+  component "OpenTelemetry Instrumentation" as OTel
+}
+
+package "MVP Layers L5 + L3" as MVP #DCFCE7 {
+  component "L5 Pack & Search\nRepomix-style · BM25+vector · MMR\nphase-aware templates" as L5
+  component "L3 Symbol & LSP\nSerena MCP" as L3
+}
+
+package "V1 Layers L1 + L4" as V1 #FEF3C7 {
+  component "L1 Structural Graph\nCodeGraph/GitNexus · tree-sitter" as L1
+  component "L4 Compression\nHeadroom-style · budgets · telemetry" as L4
+}
+
+package "V2 Layers L2 + L6" as V2 #E0F2FE {
+  component "L2 Multi-modal Graph\nGraphify-style" as L2
+  component "L6 Persistent Memory\nCognee-style · governance" as L6
+}
+
+package "Data Stores (local / VPC)" as Stores {
+  database "Qdrant\n384-dim · collection=codebase\nhttp://localhost:6333" as Qdrant #DCFCE7
+  database "FalkorDB\nredis://localhost:6379" as Falkor #FEF3C7
+  database "Entity Memory Store\n(Cognee-style — V2)" as Mem #E0F2FE
+}
+
+package "External SDLC Sources\n(IN SCOPE; V2 multi-modal depth)" as Ext {
+  component "Git / Local FS" as Git
+  component "Notion / Confluence / Jira\nFigma / Loom / SQL\n(auth Missing Evidence)" as Docs
+}
+
+User --> VSCode
+User --> CLI
+User --> JB
+User --> Viz
+GHA --> Orch
+
+VSCode --> Orch
+CLI --> Orch
+JB --> Orch
+Viz --> Orch
+
+Orch --> Sec
+Health --> Qdrant
+Health --> Falkor
+IndexSvc --> L5
+IndexSvc --> L1
+IndexSvc --> L2
+IndexSvc --> L6
+CtxSvc --> L6
+CtxSvc --> L2
+CtxSvc --> L5
+CtxSvc --> L3
+CtxSvc --> L1
+CtxSvc --> L4
+CtxSvc --> OTel
+
+L5 --> Qdrant
+L1 --> Falkor
+L2 --> Falkor
+L6 --> Mem
+L3 ..> VSCode : MCP / LSP bridge
+
+Git --> IndexSvc
+Docs --> L2
+
+CtxSvc ..> LLM : compressed context only\n(consent required)
+
+legend right
+  |= Color |= Roadmap |
+  | <#DCFCE7> | MVP |
+  | <#FEF3C7> | V1 |
+  | <#E0F2FE> | V2 |
+  | <#FEE2E2> | Timing unclear |
+endlegend
+
+@enduml

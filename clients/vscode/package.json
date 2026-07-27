@@ -1,0 +1,62 @@
+{
+  "name": "contextos",
+  "displayName": "ContextOS",
+  "description": "ContextOS L5 indexing DX — triggers FastAPI POST /index; policy stays server-side.",
+  "version": "0.1.0",
+  "publisher": "contextos",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "contextos.indexRepository",
+        "title": "ContextOS: Index Repository"
+      }
+    ],
+    "configuration": {
+      "title": "ContextOS",
+      "properties": {
+        "contextos.orchestratorBaseUrl": {
+          "type": "string",
+          "default": "http://localhost:8000",
+          "description": "Proposed: FastAPI orchestrator base URL (no trailing slash). Not a Confirmed product setting key."
+        },
+        "contextos.autoIndexOnActivate": {
+          "type": "boolean",
+          "default": true,
+          "description": "Proposed: trigger POST /index on extension activation when a workspace folder is open."
+        },
+        "contextos.reindexOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Proposed: on file save, call POST /index with Proposed optional files scope (OQ-14 — not Confirmed)."
+        },
+        "contextos.indexTimeoutMs": {
+          "type": "number",
+          "default": 600000,
+          "minimum": 1000,
+          "description": "Proposed: client-side AbortSignal timeout for POST /index (ms)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc -p ./ --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.6.0"
+  }
+}

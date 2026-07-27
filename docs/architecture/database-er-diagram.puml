@@ -1,0 +1,169 @@
+@startuml ContextOS_Database_ER
+title ContextOS Data Model — Logical ER\nConfirmed entities from BRD; physical DDL mostly Missing Evidence
+
+skinparam linetype ortho
+skinparam backgroundColor #FEFEFE
+
+' ===== L5 Qdrant (Confirmed conceptual) =====
+package "L5 Vector Store — Qdrant (MVP)" #DCFCE7 {
+  entity "codebase_chunk" as Chunk {
+    * point_id : UUID <<PK>>
+    --
+    * repo_name : string
+    * file_path : string
+    * content_chunk : text
+    * embedding : float[384]
+    token_count : int
+    * indexed_at : timestamp
+    content_hash : string <<Proposed>>
+  }
+  note right of Chunk
+    Confirmed: collection=codebase,
+    384-dim, local embeddings,
+    chunk ~500 tokens (Appendix C)
+    Full Qdrant payload schema:
+    **Missing Evidence** beyond these fields
+  end note
+}
+
+' ===== L1 FalkorDB structural (Confirmed) =====
+package "L1 Structural Graph — FalkorDB (V1)" #FEF3C7 {
+  entity "File" as File {
+    * name / path : string <<PK>>
+    repo_name : string
+    language : string <<Proposed>>
+    owner : string <<FR-08 owners>>
+  }
+  entity "Module" as Module {
+    * id : string <<PK>>
+    name : string
+  }
+  entity "Class" as Class {
+    * id : string <<PK>>
+    name : string
+    file_ref : string
+  }
+  entity "Method" as Method {
+    * id : string <<PK>>
+    name : string
+    signature : string
+  }
+  entity "Call" as Call {
+    * id : string <<PK>>
+    callee_ref : string
+  }
+  entity "Test" as Test {
+    * id : string <<PK>>
+    name : string
+    file_ref : string
+  }
+  entity "Service" as Service {
+    * name : string <<PK>>
+  }
+  entity "DbTable" as DbTable {
+    * name : string <<PK>>
+  }
+
+  File ||--o{ Module : contains
+  Module ||--o{ Class : contains
+  Class ||--o{ Method : contains
+  Method ||--o{ Call : invokes
+  File ||--o{ File : IMPORTS
+  File ||--o{ Test : covered_by <<Proposed edge>>
+  Method }o--o{ Test : tested_by <<Proposed>>
+  File }o--o| Service : belongs_to <<Proposed>>
+  File }o--o{ DbTable : touches <<blast db_tables>>
+}
+
+' ===== L2 Multi-modal (V2) =====
+package "L2 Multi-modal Nodes — Graphify (V2)" #E0F2FE {
+  entity "DocArtifact" as Doc {
+    * id : string <<PK>>
+    type : markdown|ADR|OpenAPI|other
+    path_or_uri : string
+    embedding_ref : string
+  }
+  entity "SqlArtifact" as Sql {
+    * id : string <<PK>>
+    ddl_ref : string
+  }
+  entity "ImageArtifact" as Img {
+    * id : string <<PK>>
+    uri : string
+    ocr_text : text <<FR-14 video/image OCR>>
+  }
+  entity "TranscriptArtifact" as Loom {
+    * id : string <<PK>>
+    source : Loom|other
+    text : text
+  }
+  entity "ExternalRef" as ExtRef {
+    * id : string <<PK>>
+    system : Jira|Figma|Confluence|Notion
+    external_key : string
+  }
+
+  Class }o--o{ Doc : linked_to
+  Class }o--o{ Sql : linked_to
+  Class }o--o{ ExtRef : linked_to
+  Doc }o--o{ ExtRef : linked_to
+  Img }o--o{ Doc : linked_to
+  Loom }o--o{ Doc : linked_to
+}
+
+' ===== L6 Memory (V2) =====
+package "L6 Entity Memory — Cognee-style (V2)" #E0F2FE {
+  entity "MemoryEntity" as MemEnt {
+    * id : string <<PK>>
+    * type : Person|Service|Decision|Incident
+    * label : string
+    * provenance_source : string
+    * created_at : timestamp
+    * updated_at : timestamp
+    ttl : timestamp
+    decay_score : float
+    pinned : boolean
+    forgotten : boolean
+    pii_redacted : boolean
+  }
+  entity "TemporalEdge" as TEdge {
+    * id : string <<PK>>
+    * from_entity : string <<FK>>
+    * to_entity : string <<FK>>
+    * relation : string
+    * valid_from : timestamp
+    valid_to : timestamp
+    provenance : string
+  }
+  MemEnt ||--o{ TEdge : from
+  MemEnt ||--o{ TEdge : to
+}
+
+' ===== Operational / index metadata (Proposed) =====
+package "Index Metadata (Proposed — supports NFRs)" #F1F5F9 {
+  entity "RepositoryIndex" as RepoIdx {
+    * repo_name : string <<PK>>
+    repo_path : string
+    last_full_index_at : timestamp
+    last_delta_at : timestamp
+    files_indexed : int
+    graph_nodes : int
+    embeddings_count : int
+    staleness_flag : boolean
+    partial_index : boolean
+  }
+  RepoIdx ||--o{ Chunk : indexes
+  RepoIdx ||--o{ File : indexes
+}
+
+note as N1
+  **Confirmed** relationship shape: File→Module→Class→Method→Call
+  and File-[:IMPORTS]->File (BRD §5 L1, Appendix C).
+  Blast response fields: direct_dependents, transitive,
+  db_tables, risk HIGH|MEDIUM|LOW, tests_to_run (FR-08).
+  Memory entity types: Person, Service, Decision, Incident (FR-16).
+  Physical property keys, indexes, and persistence of
+  RepositoryIndex: **Missing Evidence** / Proposed for ops.
+end note
+
+@enduml

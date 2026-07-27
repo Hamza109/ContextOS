@@ -1,0 +1,82 @@
+@startuml ContextOS_Deployment_Architecture
+title ContextOS Deployment Architecture\nConfirmed: local Docker Compose POC (BRD §15); VPC/Enterprise V2
+
+skinparam backgroundColor #FEFEFE
+skinparam node {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+}
+
+cloud "Developer Workstation / Local POC (Confirmed)" as Local {
+  node "VS Code\n+ ContextOS Extension" as VSCode #DCFCE7
+  node "CLI contextos" as CLI #DCFCE7
+  
+  node "Docker Compose" as DC {
+    node "contextos-api\nFastAPI :8000?\n(port Missing Evidence — Proposed 8000)" as API #DCFCE7
+    database "Qdrant\n:6333\ncollection codebase" as Qdrant #DCFCE7
+    database "FalkorDB\n:6379" as Falkor #FEF3C7
+  }
+  
+  node "Serena MCP\n(local process / MCP host)" as Serena #DCFCE7
+  node "Embedding model cache\nall-MiniLM-L6-v2 ~90MB CPU" as Emb #DCFCE7
+  folder "Local Git repos\n./repos/..." as Repos
+}
+
+cloud "Optional Query-time LLM (Consent required)" as LLMCloud {
+  node "Gemini / GPT-4\nor local Ollama" as LLM
+}
+
+cloud "V2 Enterprise / VPC (Confirmed direction; details Missing Evidence)" as VPC #E0F2FE {
+  node "VPC Network" as Net {
+    node "Orchestrator replicas\n(availability 99.5% indexer target)" as API_HA
+    database "Qdrant (VPC)" as Q_VPC
+    database "FalkorDB (VPC)" as F_VPC
+    database "Memory store" as M_VPC
+    node "OTel Collector\n→ metrics backend (vendor NEEDS CLARIFICATION)" as OTel
+  }
+  node "RBAC policy enforcement\nper repo path" as RBAC
+}
+
+cloud "CI" as CI {
+  node "GitHub Action\n(trigger/payload Missing Evidence)" as GHA #FEF3C7
+}
+
+VSCode --> API : HTTPS/HTTP loopback
+CLI --> API
+API --> Qdrant
+API --> Falkor
+API --> Emb
+API --> Serena
+API --> Repos : read (gitignore policy)
+API ..> LLM : compressed context only
+GHA --> API
+
+API_HA --> Q_VPC
+API_HA --> F_VPC
+API_HA --> M_VPC
+API_HA --> OTel
+API_HA --> RBAC
+
+note bottom of DC
+  **Zero Risk POC (BRD §15):**
+  $0 infra — FalkorDB, Qdrant, Serena OSS
+  Docker Compose; solo-dev timeline 2–3 weeks
+  MVP can run with Qdrant + API + Serena
+  even if FalkorDB container present but unused until V1
+end note
+
+note bottom of VPC
+  Air-gapped on-prem without enterprise tier:
+  OUT OF SCOPE (BRD §6).
+  K8s/Ingress/TLS termination: Not evidenced —
+  require ADR before adoption.
+end note
+
+legend right
+  |= Color |= Phase |
+  | <#DCFCE7> | MVP-capable |
+  | <#FEF3C7> | V1-oriented |
+  | <#E0F2FE> | V2 enterprise |
+endlegend
+
+@enduml
