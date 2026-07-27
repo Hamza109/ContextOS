@@ -56,3 +56,27 @@ def test_relevant_files_score_behavior_documented_proposed() -> None:
     item = RelevantFileItem(path="a.py", score=0.9)
     assert item.path == "a.py"
     assert item.score == 0.9
+
+
+def test_no_invented_confirmed_l3_response_fields() -> None:
+    """T061: Proposed enrichment must not add Confirmed Appendix D L3 fields (FR-012)."""
+    model_fields = set(ContextResponse.model_fields.keys())
+    invented = {
+        "safe_edit_plan",
+        "symbol_definition",
+        "references",
+        "rename_scope",
+        "l3",
+        "serena",
+    }
+    assert model_fields.isdisjoint(invented)
+    assert CONFIRMED_RESPONSE_FIELDS.issubset(model_fields)
+
+
+def test_openapi_has_no_confirmed_symbol_rest_paths() -> None:
+    """T071: OpenAPI Confirmed Appendix D unchanged — no L3 symbol REST."""
+    client = TestClient(app)
+    paths = set(client.get("/openapi.json").json()["paths"].keys())
+    assert "/context" in paths
+    for p in ("/symbol", "/definition", "/references", "/rename-scope", "/serena"):
+        assert p not in paths

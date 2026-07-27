@@ -1,7 +1,7 @@
 {
   "name": "contextos",
   "displayName": "ContextOS",
-  "description": "ContextOS L5 indexing DX — triggers FastAPI POST /index; policy stays server-side.",
+  "description": "ContextOS L5 indexing + L3 symbol DX — triggers FastAPI; policy stays server-side.",
   "version": "0.1.0",
   "publisher": "contextos",
   "engines": {
@@ -17,8 +17,48 @@
       {
         "command": "contextos.indexRepository",
         "title": "ContextOS: Index Repository"
+      },
+      {
+        "command": "contextos.definitionLookup",
+        "title": "ContextOS: Go to Definition (Serena)"
+      },
+      {
+        "command": "contextos.findReferences",
+        "title": "ContextOS: Find All References"
+      },
+      {
+        "command": "contextos.renameScopeAnalysis",
+        "title": "ContextOS: Rename Scope Analysis"
+      },
+      {
+        "command": "contextos.packContext",
+        "title": "ContextOS: Pack Context"
       }
     ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "contextos.packContext",
+          "group": "contextos@1",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "contextos.definitionLookup",
+          "group": "contextos@2",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "contextos.findReferences",
+          "group": "contextos@3",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "contextos.renameScopeAnalysis",
+          "group": "contextos@4",
+          "when": "editorTextFocus"
+        }
+      ]
+    },
     "configuration": {
       "title": "ContextOS",
       "properties": {

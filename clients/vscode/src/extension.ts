@@ -1,9 +1,10 @@
 /**
- * ContextOS VS Code extension entry (EP-001 US-011 / US-012).
+ * ContextOS VS Code extension entry (EP-001 indexing + EP-003 L3 DX).
  *
- * Owns DX only: activation auto-index, progress, client cancel, save re-index trigger,
- * Proposed orchestrator base URL settings.
- * FastAPI owns pack / ignore / consent / embed / Qdrant — never reimplemented here.
+ * Owns DX only: activation auto-index, progress, client cancel, save re-index,
+ * Serena MCP hover/commands, Pack Context → POST /context.
+ * FastAPI owns pack / ignore / consent / embed / Qdrant / symbol policy —
+ * never reimplemented here.
  */
 
 import * as vscode from "vscode";
@@ -13,13 +14,40 @@ import { triggerAutoIndex } from "./indexing/autoIndex";
 import { registerOnSaveReindex } from "./indexing/onSaveReindex";
 import { runWithIndexProgress, type IndexProgressHost } from "./indexing/progress";
 import { resolvePrimaryWorkspace } from "./indexing/workspace";
+import { SerenaMcpClient } from "./mcp/serenaClient";
+import { createSerenaHoverProvider } from "./providers/hoverProvider";
+import {
+  DEFINITION_LOOKUP_COMMAND,
+  FIND_REFERENCES_COMMAND,
+  PACK_CONTEXT_COMMAND,
+  RENAME_SCOPE_COMMAND,
+  runDefinitionLookup,
+  runFindReferences,
+  runPackContext,
+  runRenameScopeAnalysis,
+} from "./commands";
 
 let indexingInFlight = false;
+let outputChannel: vscode.OutputChannel | undefined;
+let serenaClient: SerenaMcpClient | undefined;
 
 export function activate(context: vscode.ExtensionContext): void {
   const progressHost = createProgressHost();
+  outputChannel = vscode.window.createOutputChannel("ContextOS");
+  context.subscriptions.push(outputChannel);
+
+  // Proposed: injectable MCP session not supplied at activate — unavailable until host wires live Serena.
+  // Tests inject via createSerenaClientForTests. Clear IDE error on command use (T070).
+  serenaClient = new SerenaMcpClient();
+  context.subscriptions.push({
+    dispose: () => {
+      serenaClient?.close();
+      serenaClient = undefined;
+    },
+  });
 
   const getConfig = () => readExtensionConfig(vscode.workspace.getConfiguration.bind(vscode.workspace));
+  const getClient = () => serenaClient ?? new SerenaMcpClient();
 
   const showInfo = (m: string) => {
     void vscode.window.showInformationMessage(m);
@@ -29,6 +57,11 @@ export function activate(context: vscode.ExtensionContext): void {
   };
   const showError = (m: string) => {
     void vscode.window.showErrorMessage(m);
+  };
+  const presentReport = (text: string) => {
+    outputChannel?.appendLine(text);
+    outputChannel?.appendLine("");
+    outputChannel?.show(true);
   };
 
   context.subscriptions.push(
@@ -78,6 +111,96 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   );
 
+  // --- EP-003 L3 commands (Proposed IDs) ---
+  context.subscriptions.push(
+    vscode.commands.registerCommand(DEFINITION_LOOKUP_COMMAND, async () => {
+      await runDefinitionLookup({
+        getClient,
+        getEditor: () => vscode.window.activeTextEditor,
+        workspaceFolders: () => vscode.workspace.workspaceFolders,
+        showInformationMessage: showInfo,
+        showWarningMessage: showWarn,
+        showErrorMessage: showError,
+        openAt: async (path, line) => {
+          const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(path));
+          const editor = await vscode.window.showTextDocument(doc);
+          const pos = new vscode.Position(Math.max(0, line - 1), 0);
+          editor.selection = new vscode.Selection(pos, pos);
+          editor.revealRange(new vscode.Range(pos, pos));
+        },
+      });
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(FIND_REFERENCES_COMMAND, async () => {
+      await runFindReferences({
+        getClient,
+        getEditor: () => vscode.window.activeTextEditor,
+        workspaceFolders: () => vscode.workspace.workspaceFolders,
+        showInformationMessage: showInfo,
+        showWarningMessage: showWarn,
+        showErrorMessage: showError,
+        presentReport,
+        pickFileTypeFilters: async (extensions) => {
+          const items = [
+            { label: "All file types", description: "Show every MCP reference", picked: true },
+            ...extensions.map((ext) => ({
+              label: ext,
+              description: `Filter to ${ext}`,
+              picked: false,
+            })),
+          ];
+          const picked = await vscode.window.showQuickPick(items, {
+            canPickMany: true,
+            title: "ContextOS: filter references by file type",
+            placeHolder: "Select extensions (All = no filter)",
+          });
+          if (!picked) return undefined;
+          if (picked.some((p) => p.label === "All file types") || picked.length === 0) {
+            return [];
+          }
+          return picked.map((p) => p.label);
+        },
+      });
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(RENAME_SCOPE_COMMAND, async () => {
+      await runRenameScopeAnalysis({
+        getClient,
+        getEditor: () => vscode.window.activeTextEditor,
+        workspaceFolders: () => vscode.workspace.workspaceFolders,
+        showInformationMessage: showInfo,
+        showWarningMessage: showWarn,
+        showErrorMessage: showError,
+        presentReport,
+      });
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(PACK_CONTEXT_COMMAND, async () => {
+      await runPackContext({
+        getConfig,
+        getEditor: () => vscode.window.activeTextEditor,
+        workspaceFolders: () => vscode.workspace.workspaceFolders,
+        showInformationMessage: showInfo,
+        showWarningMessage: showWarn,
+        showErrorMessage: showError,
+        presentReport,
+      });
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.languages.registerHoverProvider(
+      { scheme: "file" },
+      createSerenaHoverProvider(getClient),
+    ),
+  );
+
   context.subscriptions.push(
     registerOnSaveReindex(
       {
@@ -111,7 +234,6 @@ export function activate(context: vscode.ExtensionContext): void {
     showWarningMessage: showWarn,
     showErrorMessage: showError,
     logTiming: (ms, result) => {
-      // T057: optional observational timing — hardware-gated, not a hard SLA
       console.log(
         `[ContextOS][obs] auto-index wall_ms=${ms} server_time_ms=${result.time_ms} files=${result.files_indexed}`,
       );
@@ -122,7 +244,13 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export function deactivate(): void {
-  // no-op
+  serenaClient?.close();
+  serenaClient = undefined;
+}
+
+/** Test hook: replace MCP client (Proposed — not a product API). */
+export function setSerenaClientForTests(client: SerenaMcpClient | undefined): void {
+  serenaClient = client;
 }
 
 function createProgressHost(): IndexProgressHost {

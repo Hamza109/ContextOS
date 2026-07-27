@@ -74,6 +74,48 @@ class Settings(BaseSettings):
         description="Proposed default SDLC phase when OQ-16 phase omitted — not Confirmed",
     )
 
+    # --- EP-003 Proposed Serena MCP knobs (NOT Confirmed product freeze; ADR-005) ---
+    # OQ-Symbol-REST remains open — these configure orchestrator→Serena enrichment only.
+    serena_enabled: bool = Field(
+        default=True,
+        description="Proposed: enable Serena MCP adapter for L3 enrichment",
+    )
+    serena_command: str | None = Field(
+        default=None,
+        description=(
+            "Proposed: Serena MCP launch command (stdio). "
+            "SDK package pin NEEDS CLARIFICATION — do not invent Confirmed pin."
+        ),
+    )
+    serena_args: str = Field(
+        default="",
+        description="Proposed: space-separated extra args for Serena MCP process",
+    )
+    serena_cwd: str | None = Field(
+        default=None,
+        description="Proposed: working directory for Serena MCP process",
+    )
+    serena_timeout_seconds: float = Field(
+        default=30.0,
+        description="Proposed: Serena MCP call timeout seconds",
+    )
+    serena_use_test_double: bool = Field(
+        default=False,
+        description=(
+            "Proposed: force InMemorySerenaDouble (tests/local without live MCP). "
+            "OQ-MCP-Fallback — not Confirmed product UX."
+        ),
+    )
+    # Proposed: optional Pack Context safe-edit enrichment on POST /context (US-010).
+    # Does not invent Confirmed Appendix D response fields — content goes in final_context.
+    context_safe_edit_enrichment: bool = Field(
+        default=True,
+        description=(
+            "Proposed: attach Serena-informed safe edit plan block to final_context "
+            "(OQ-Safe-Edit-Shape open — delimited text interim)"
+        ),
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:
