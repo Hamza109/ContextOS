@@ -8,7 +8,12 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.adapters.embeddings import HashEmbedder
+from app.adapters.falkordb_store import InMemoryFalkorStore
 from app.adapters.fs_walker import walk_allowed_files
+from app.adapters.l1_parser import TreeSitterL1Parser
+from app.config import Settings
+from app.services.l1_entity_cache import L1EntityCache
+from app.services.l1_graph import L1GraphService
 from app.services.l5_index import run_index
 from app.services.l5_pack import pack_repository
 from tests.fixtures.ignore_exclusion_repo import (
@@ -56,16 +61,36 @@ def test_shared_fixture_packs_and_embeddings(tmp_path: Path, monkeypatch) -> Non
     monkeypatch.setenv("CONTEXTOS_PACK_CACHE_DIR", str(tmp_path / "packs"))
 
     store = CapturingStore()
+    graph_store = InMemoryFalkorStore()
+    seen_by_parser: list[str] = []
+
+    class RecordingParser(TreeSitterL1Parser):
+        def parse_paths(self, repo, root, paths, index_revision):
+            seen_by_parser.extend(path.relative_to(root).as_posix() for path in paths)
+            return super().parse_paths(repo, root, paths, index_revision)
+
+    graph_service = L1GraphService(
+        Settings(falkordb_url="memory://privacy"),
+        parser=RecordingParser(),
+        store=graph_store,
+        cache=L1EntityCache(),
+    )
     result = run_index(
         str(root),
         "fixture_e2e",
         embedder=HashEmbedder(),
         store=store,  # type: ignore[arg-type]
+        graph_service=graph_service,
     )
     assert result.pack is not None
     for excl in EXCLUDED_REL_PATHS:
         assert f'path="{excl}"' not in result.pack.xml_content
         assert excl not in {p["file_path"] for p in store.payloads}
+        assert excl not in seen_by_parser
+        assert all(
+            node.source_path != excl
+            for node in graph_store.nodes["fixture_e2e"].values()
+        )
 
     emb_paths = {p["file_path"] for p in store.payloads}
     for ok in ALLOWED_REL_PATHS:

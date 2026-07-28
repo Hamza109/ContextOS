@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
+from app.config import Settings
 from app.main import app
 
 CONFIRMED_STATUS_VALUES = frozenset({"ok", "degraded", "error"})
@@ -34,38 +35,54 @@ def test_health_confirmed_fields_present() -> None:
     assert isinstance(data["qdrant"], str) and data["qdrant"]
 
 
-def test_health_a07_falkor_unused_does_not_force_error() -> None:
-    """A-07 / FR-007 / SC-005: Falkor unused/absent alone must not force status=error.
-
-    When Qdrant reports ok, overall status stays ok even if falkor is unused.
-    """
+def test_health_reports_ready_when_l1_and_l5_dependencies_are_ready() -> None:
     client = TestClient(app)
-    with patch("app.api.health.QdrantStore") as store_cls:
-        store_cls.return_value.health.return_value = "ok"
+    with (
+        patch("app.api.health.QdrantStore") as qdrant_cls,
+        patch("app.api.health.FalkorDBStore") as falkor_cls,
+    ):
+        qdrant_cls.return_value.health.return_value = "ok"
+        falkor_cls.return_value.health.return_value = "ok"
         resp = client.get("/")
-    # Proposed HTTP (OQ-HTTP-Health) — observe without freezing
     assert resp.status_code in {200, 503}
     data = resp.json()
-    assert data["falkor"] == "unused"
+    assert data["falkor"] == "ok"
     assert data["qdrant"] == "ok"
     assert data["status"] == "ok"
-    assert data["status"] != "error"
     assert "pipeline" in data and data["pipeline"]
 
 
-def test_health_qdrant_down_degrades_not_falkor_driven() -> None:
-    """When Qdrant is unavailable, status reflects Qdrant/pipeline — not Falkor alone."""
+def test_health_qdrant_down_degrades_with_fields_unchanged() -> None:
     client = TestClient(app)
-    with patch("app.api.health.QdrantStore") as store_cls:
-        store_cls.return_value.health.return_value = "error"
+    with (
+        patch("app.api.health.QdrantStore") as qdrant_cls,
+        patch("app.api.health.FalkorDBStore") as falkor_cls,
+    ):
+        qdrant_cls.return_value.health.return_value = "error"
+        falkor_cls.return_value.health.return_value = "ok"
         resp = client.get("/")
-    assert resp.status_code in {200, 503}  # Proposed (OQ-HTTP-Health)
+    assert resp.status_code in {200, 503}
     data = resp.json()
-    assert data["falkor"] == "unused"
+    assert data["falkor"] == "ok"
     assert data["qdrant"] == "error"
     assert data["status"] == "degraded"
-    # MVP search readiness is not failed solely by Falkor absence
-    assert data["status"] != "error"
+
+
+def test_health_falkor_down_degrades_l1_readiness() -> None:
+    client = TestClient(app)
+    with (
+        patch(
+            "app.api.health.get_settings",
+            return_value=Settings(falkordb_url="redis://127.0.0.1:6379"),
+        ),
+        patch("app.api.health.QdrantStore") as qdrant_cls,
+        patch("app.api.health.FalkorDBStore") as falkor_cls,
+    ):
+        qdrant_cls.return_value.health.return_value = "ok"
+        falkor_cls.return_value.health.return_value = "error"
+        data = client.get("/").json()
+    assert data["falkor"] == "error"
+    assert data["status"] == "degraded"
 
 
 def test_sc007_uptime_harness_not_claimed() -> None:

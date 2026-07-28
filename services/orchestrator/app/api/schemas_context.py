@@ -16,8 +16,14 @@ class ContextMetrics(BaseModel):
     MVP values may be packing token counts only (OQ-MVP-metrics / A-06) — Proposed semantics.
     """
 
-    tokens_before: int = Field(..., description="Confirmed key; MVP packing count Proposed (OQ-MVP-metrics)")
-    tokens_after: int = Field(..., description="Confirmed key; MVP packing count Proposed (OQ-MVP-metrics)")
+    tokens_before: int = Field(
+        ...,
+        description="Confirmed key; MVP packing count Proposed (OQ-MVP-metrics)",
+    )
+    tokens_after: int = Field(
+        ...,
+        description="Confirmed key; MVP packing count Proposed (OQ-MVP-metrics)",
+    )
     saving_percent: float = Field(
         ...,
         description="Confirmed key; no invent pass thresholds (OQ-MVP-metrics)",

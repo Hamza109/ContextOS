@@ -7,12 +7,15 @@ dependencies = [
   "fastapi>=0.115.0",
   "uvicorn[standard]>=0.32.0",
   "qdrant-client>=1.12.0",
+  "FalkorDB>=1.6.2,<2",
+  "tree-sitter-language-pack>=1.13.3,<2",
   "sentence-transformers>=3.0.0",
   "opentelemetry-api>=1.28.0",
   "opentelemetry-sdk>=1.28.0",
   "pydantic>=2.9.0",
   "pydantic-settings>=2.6.0",
   "httpx>=0.27.0",
+  "pyyaml>=6.0.0",
 ]
 
 [project.optional-dependencies]
@@ -35,7 +38,9 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 markers = [
   "requires_qdrant: needs a running Qdrant instance",
+  "requires_falkordb: needs a running FalkorDB instance",
   "perf: performance harness (may skip without corpus)",
+  "eval: deterministic evaluation harness",
 ]
 
 [tool.ruff]

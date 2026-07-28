@@ -103,6 +103,21 @@ MATCH (f)-[:IMPORTS*1..3]->(dep) WHERE f.name="payment.service.ts"
 - Delta <60s for 100-file delta (FR-07); 0.5s single-file save claim (BRD §14).
 - Staleness badge mitigation (BRD §13) implies a freshness flag — storage **Proposed**.
 
+### EP-006 implemented persistence contract
+
+- Repository-isolated graph names use a configured prefix plus a SHA-256 repository digest.
+- Persisted labels are `File`, `Module`, `Class`, `Method`, and `Call`; edges are
+  `CONTAINS`, `DECLARES`, `MAKES_CALL`, and `IMPORTS`.
+- Nodes store deterministic `entity_id`, `repo`, normalized `source_path`, `entity_kind`,
+  `qualified_name`, `start_line`, `end_line`, and `index_revision`. Edges store repository,
+  source path, and revision provenance. Full source bodies are not stored.
+- Full indexing replaces the prior repository revision after successful persistence.
+  Proposed incremental scopes reconcile affected paths with deterministic `MERGE` writes.
+- Local imports that resolve to indexed repository files produce `(File)-[:IMPORTS]->(File)`;
+  unresolved external imports remain structural module evidence.
+- FalkorDB is the source of truth. FastAPI maintains only a bounded, revision-scoped,
+  metadata-only LRU+TTL hot-entity cache for structural query enrichment.
+
 ---
 
 ## 4. Multi-modal graph (V2 / L2)

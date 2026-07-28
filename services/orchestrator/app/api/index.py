@@ -13,13 +13,13 @@ router = APIRouter(tags=["index"])
 @router.post(
     "/index",
     response_model=IndexResponse,
-    summary="Index a repository (L5 packing + local embeddings)",
+    summary="Index a repository (L5 content + L1 structural graph)",
     description=(
         "Confirmed: request {repo_path, repo_name} → "
         "{files_indexed, graph_nodes, embeddings, time_ms}. "
         "Optional paths/files are Proposed (OQ-14) only. "
         "HTTP status codes are Proposed (OQ-HTTP unresolved). "
-        "graph_nodes is 0 for EP-001 MVP (no L1 writes)."
+        "graph_nodes is the distinct L1 node count persisted for this request."
     ),
     responses={
         400: {"description": "Proposed: invalid/unreadable repo_path or empty repo_name (OQ-HTTP)"},
@@ -46,7 +46,7 @@ def post_index(body: IndexRequest) -> IndexResponse:
 
     return IndexResponse(
         files_indexed=result.files_indexed,
-        graph_nodes=result.graph_nodes,  # always 0 in MVP
+        graph_nodes=result.graph_nodes,
         embeddings=result.embeddings,
         time_ms=result.time_ms,
     )

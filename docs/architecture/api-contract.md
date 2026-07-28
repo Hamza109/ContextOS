@@ -80,6 +80,17 @@ Until auth is specified, treat local/dev as trusted loopback for POC only (**Ass
 
 **OQ-14 status (EP-001 sync note — 2026-07-27):** Still **Unresolved**. Product has not Confirmed incremental fields. Backend implementation may accept **Proposed** optional request fields `paths` / `files` on `POST /index` for narrower-scope re-index; these MUST remain labeled Proposed in OpenAPI and MUST NOT be treated as Appendix D Confirmed. No new Confirmed endpoints. See `specs/ep-001-l5-repository-packing-indexing/open-questions.md`.
 
+**EP-006 implementation note:** The existing route now performs FastAPI-owned L1 extraction
+after the shared ignore/no-exfiltration boundary, persists repository-isolated structural
+metadata in FalkorDB, and reports the distinct persisted request-node count through the
+existing `graph_nodes` field. L1 failure uses the existing generic index failure path; no
+request field, response field, endpoint, or graph-specific HTTP contract was added.
+
+**EP-013 Proposed implementation note:** After the same eligibility boundary (and after L1
+when present), FastAPI may generate a repository-scoped OKF v0.2 markdown bundle under a
+Proposed cache directory. Concept counts are **not** added to the Confirmed `/index`
+response. OKF generation failure must preserve existing Confirmed index outcomes.
+
 ---
 
 ### 2.3 `POST /context`
@@ -128,6 +139,19 @@ Until auth is specified, treat local/dev as trusted loopback for POC only (**Ass
 | Performance | Contributes to search p95 <800ms (L5) and overall ask <2s MVP exit / <8s demo (BRD §15) |
 | Citations | BRD §14: file:line + confidence in packed context — **exact JSON shape for citations inside final_context Missing Evidence** |
 | Status codes | **Not evidenced** — **Proposed:** `200`; `400` validation; `403` RBAC/consent; `404` unknown repo; `413`/`422` budget hard-fail (FR-11 V1); `503` degraded |
+
+**EP-006 implementation note:** For supported structural location/ownership questions,
+FastAPI may append a delimited, cited L1 evidence block inside the existing `final_context`
+string and add non-sensitive cache/status/timing values inside the existing `metrics.trace`.
+The response shape is unchanged. Cache miss, stale revision, unsupported intent, or
+unavailable L1 preserves the existing L5 context. `contextos_ask` remains a stateless thin
+client. Blast-radius computation remains outside EP-006.
+
+**EP-013 Proposed implementation note:** FastAPI may attempt OKF concept/link lookup before
+L1 structural enrichment and L5 BM25/vector fallback. Cited OKF evidence may appear only
+inside existing `final_context`, with non-sensitive `okf_status` / timing notes inside
+existing `metrics.trace`. No new Confirmed request/response fields or endpoints. Miss or
+error preserves hybrid search. MCP remains a stateless pass-through.
 
 ---
 

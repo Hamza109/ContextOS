@@ -1194,3 +1194,540 @@ Branch: feature/contextos-mcp-agent-wiring
 - Enable MCP in Cursor (reload); keep orchestrator on :8000; index repo then call `contextos_ask`
 - Optional: commit/PR this branch
 
+---
+
+## Handoff: spec-writer
+
+Date: 2026-07-28
+
+Feature: ep-006-l1-structural-graph
+
+Source Input:
+
+- User-authorized EP-006 scope: US-017 and US-021 only; branch `feature/ep-006-l1-structural-graph`.
+
+Artifacts Reviewed:
+
+- Constitution, lean-artifacts and graphify-first rules; backlog EP-006/US-017/US-021/OQ-06; BRD FR-07/FR-10/§5/§10/§14/§15; ADR-004; API contract; architecture set; current L5 index/health/Compose; EP-001..005 and merged PR #6 boundary.
+
+Artifacts Created or Updated:
+
+- None yet.
+
+### What was completed
+
+- Confirmed L1 persists in FalkorDB using CodeGraph/GitNexus/tree-sitter/regex direction; `POST /index` owns V1 `graph_nodes`.
+- Confirmed FastAPI owns policy; `/blast` and visualization are EP-007 boundaries only.
+
+### What failed
+
+- OQ-06 blocks FastAPI ↔ codebase-memory-MCP contract detail for US-021; do not freeze APIs or implementation.
+
+### Next instructions
+
+- Create only `specs/ep-006-l1-structural-graph/spec.md`; cite upstream EP-001..005 and PR #6 without re-specifying L5/L3/CLI/MCP.
+
+### Blocking questions
+
+- OQ-06: ownership/interface/error/freshness contract for codebase-memory-MCP remains Proposed and blocking for US-021 detail.
+
+---
+
+## Handoff: plan-generator
+
+Date: 2026-07-28
+
+Feature: ep-006-l1-structural-graph
+
+Source Input:
+
+- Approved draft specification for US-017 and US-021 only.
+
+Artifacts Reviewed:
+
+- `specs/ep-006-l1-structural-graph/spec.md`; governing BRD/ADR/API/architecture and upstream-boundary evidence cited in it.
+
+Artifacts Created or Updated:
+
+- `specs/ep-006-l1-structural-graph/spec.md`
+
+### What was completed
+
+- Spec has eight traceable requirements, L1/FastAPI boundaries, upstream EP-001..005 plus PR #6 dependencies, and no extra delivery scope.
+
+### What failed
+
+- No failure; OQ-06 remains a deliberate blocker for US-021 contract detail and verification.
+
+### Next instructions
+
+- Create only lean `plan.md`; preserve `POST /index`/`graph_nodes`, FalkorDB and parser direction, test harness gates, and EP-007 exclusion.
+
+### Blocking questions
+
+- OQ-06: no Confirmed FastAPI↔codebase-memory-MCP interface, ownership, freshness, or failure contract.
+
+---
+
+## Handoff: task-generator
+
+Date: 2026-07-28
+
+Feature: ep-006-l1-structural-graph
+
+Source Input:
+
+- EP-006 specification and approved implementation plan for US-017 plus blocked US-021.
+
+Artifacts Reviewed:
+
+- `specs/ep-006-l1-structural-graph/spec.md`
+- `specs/ep-006-l1-structural-graph/plan.md`
+
+Artifacts Created or Updated:
+
+- `specs/ep-006-l1-structural-graph/plan.md`
+
+### What was completed
+
+- Planned FastAPI-owned FalkorDB extraction through existing `POST /index.graph_nodes`, with policy, tests, Compose, telemetry, and harness gates.
+
+### What failed
+
+- US-021 remains unplannable beyond discovery/design dependency; OQ-06 is unresolved.
+
+### Next instructions
+
+- Create only `tasks.md`; include exact known paths, discovery tasks for missing driver/schema/parser decisions, and blocked US-021 tasks without implementation/API freeze.
+
+### Blocking questions
+
+- OQ-06 blocks FastAPI↔codebase-memory-MCP ownership, contract, cache lifecycle, failure semantics, and verification.
+
+---
+
+## Handoff: test-validation-agent
+
+Date: 2026-07-28
+
+Feature: ep-006-l1-structural-graph
+
+Source Input:
+
+- Completed EP-006 Spec Kit triad for US-017 and blocked US-021.
+
+Artifacts Reviewed:
+
+- `specs/ep-006-l1-structural-graph/spec.md`
+- `specs/ep-006-l1-structural-graph/plan.md`
+- `specs/ep-006-l1-structural-graph/tasks.md`
+
+Artifacts Created or Updated:
+
+- `specs/ep-006-l1-structural-graph/tasks.md`
+
+### What was completed
+
+- 33 tasks sequence L1 decisions, FastAPI/FalkorDB implementation, policy and harness tests; US-021 has design-only blocked tasks.
+
+### What failed
+
+- No planning failure; OQ-06 remains blocking, and L1 driver/schema/parser/failure details are marked discovery gates.
+
+### Next instructions
+
+- Create only `validation-report.md`; validate triad completeness, evidence labels, scope, task coverage, blockers, and readiness. Do not claim test execution.
+
+### Blocking questions
+
+- OQ-06 blocks US-021 implementation readiness and outcome verification until an approved FastAPI↔codebase-memory-MCP contract exists.
+
+---
+
+## Handoff: lead-developer-agent
+
+Date: 2026-07-28
+
+Feature: ep-006-l1-structural-graph
+
+Source Input:
+
+- Validated EP-006 Spec Kit triad for US-017 and US-021.
+
+Artifacts Reviewed:
+
+- `spec.md`, `plan.md`, `tasks.md`, `validation-report.md`
+
+Artifacts Created or Updated:
+
+- `validation-report.md`
+
+### What was completed
+
+- Lean planning artifacts completed; validation score 6.5/10; no application code or test execution.
+
+### What failed
+
+- Full EP-006 readiness rejected: OQ-06 blocks US-021.
+
+### Next instructions
+
+- May execute US-017 discovery tasks T001–T006 only; do not start implementation until their decisions are approved.
+
+### Blocking questions
+
+- OQ-06 must define the FastAPI↔codebase-memory-MCP contract before US-021 work.
+
+---
+
+## Handoff: lead-developer-agent — EP-006 ready
+
+Date: 2026-07-28
+Branch: `feature/ep-006-l1-structural-graph`
+Artifacts: `specs/ep-006-l1-structural-graph/{spec,plan,tasks,validation-report}.md`
+
+### Approved
+- Validation: **APPROVED**, 9.4/10; no planning blocker.
+- T001–T006 and T029–T030 decisions are complete.
+- Official FalkorDB + tree-sitter language-pack, deterministic revisioned schema, five-language parser/fallback, fail-index behavior, and Compose design are fixed.
+- FastAPI owns the revision-scoped LRU+TTL entity cache and existing `/context` enrichment; MCP is stateless; L5 fallback is required; blast remains EP-007.
+
+### Execute next
+- Implement T007–T038 in dependency order, test-first.
+- Preserve existing `/index` and `/context` fields, ignore/no-exfil policy, and metadata-only provenance/cache.
+- Record actual pass/fail/skip evidence; accuracy, cache, latency, Compose, and performance are currently **Not Executed**.
+
+---
+
+## Handoff: backend-agent
+
+Date: 2026-07-28
+
+Feature: ep-006-l1-structural-graph
+
+Task IDs: T007–T028, T031–T035
+
+Source Input: Approved EP-006 triad and 9.4/10 planning validation.
+
+Artifacts Reviewed: Constitution; EP-006 spec/plan/tasks/validation; architecture contracts.
+
+Artifacts Created or Updated: This implementation handoff only.
+
+### What was completed
+
+- UI/UX, frontend, and VS Code implementation are N/A.
+- Fixed boundaries: FastAPI ownership, exact existing API fields, stateless MCP, EP-007 blast exclusion.
+- Backend checklist follows task dependency order and test-first requirements.
+
+### What failed
+
+- No implementation attempted yet; runtime and harness evidence remain unexecuted.
+
+### Next instructions
+
+- Implement T007–T028 and T031–T035 test-first on the current branch.
+- Preserve unrelated `.cursor/mcp.json` and `.github/` changes; do not commit or push.
+- Run focused tests and report exact commands, outcomes, changed files, skips, and risks.
+
+### Blocking questions
+
+- None. Record unavailable FalkorDB/corpora as skips, never inferred passes.
+
+---
+
+## Handoff: backend-agent → lead-developer-agent
+
+Date: 2026-07-28
+
+Feature: ep-006-l1-structural-graph
+
+Task IDs: T007–T028, T031–T035
+
+Source Input: Approved EP-006 spec/plan/tasks and 9.4/10 validation.
+
+Artifacts Reviewed: Constitution; EP-006 triad; latest backend handoff; L5 index/context, policy, telemetry, Compose, tests, and MCP pass-through.
+
+Artifacts Created or Updated: FastAPI L1 parser/store/service/cache/query enrichment, Compose/config/dependencies, fixtures, tests/harnesses, and MCP regression.
+
+### What was completed
+
+- Implemented five-language local parsing, deterministic provenance, FalkorDB replacement/delta writes, real `graph_nodes`, aggregate telemetry, and policy-only allowed-path input.
+- Implemented 10k/300s revision-scoped metadata cache and cited `/context` enrichment with L5 fallback, cache refill, stateless MCP, and blast decline.
+- Full backend: 131 passed, 9 skipped; focused EP-006: 39 passed, 4 skipped; Ruff, compile, Compose config, MCP 4 tests/build passed.
+- Live FalkorDB adapter passed; graph/query eval each measured 1.0 precision/recall/F1 and cache hit 1.0; local 100-file harness observed 0.179s.
+
+### What failed
+
+- Full Compose API index smoke not executed: no fixture path mounted in API container.
+- 1M-LOC combined harness not executed: no approved corpus.
+
+### Next instructions
+
+- Testing/lead may run the opt-in Compose and 1M-LOC harnesses, then own validation-report.md and review-report.md.
+- Review Qdrant client/server warning (local client 1.18 vs running server 1.12.5); unrelated user `.cursor/mcp.json` and `.github/` work was preserved.
+
+### Blocking questions
+
+- None for implementation; external corpus/mounted Compose fixture remain validation prerequisites.
+
+---
+
+## Handoff: testing-agent → lead-developer-agent
+
+Date: 2026-07-28
+
+Feature: ep-006-l1-structural-graph
+
+Task IDs: T037–T038
+
+Source Input: Completed EP-006 local implementation and approved triad.
+
+Artifacts Reviewed: Constitution; EP-006 triad/prior validation; latest backend handoff; implementation, tests, MCP, Compose, and generated OpenAPI.
+
+Artifacts Created or Updated: `validation-report.md`; T037–T038 in `tasks.md`; this handoff.
+
+### What was completed
+
+- Focused EP-006: 46 passed, 1 opt-in skip; live FalkorDB rerun passed.
+- Full orchestrator: 131 passed, 9 skipped; MCP 4 tests, typecheck, and build passed.
+- Graph/query evals: 1.0 precision/recall/F1; cache hit 1.0.
+- 100-file cold harness: 0.2998s, 500 nodes; embeddings intentionally skipped.
+- EP-006 Ruff, compile, contract/scope/privacy/health audits passed.
+- No implementation/test defect found or corrected.
+
+### What failed
+
+- Compose API build blocked by pip `[Errno 5]` and Docker daemon EOF after large Torch/CUDA downloads.
+- Broad Ruff has 15 unrelated/fixture findings; 1M-LOC harness lacks corpus.
+
+### Next instructions
+
+- Begin PR-readiness review; do not treat blocked Compose or 1M-LOC evidence as passed.
+- Align Qdrant versions and retry Compose in a healthy Docker environment when practical.
+
+### Blocking questions
+
+- None for review start; Compose deployment and 1M-LOC target remain residual gates.
+
+---
+
+## Handoff: lead-developer-agent → PR reviewer
+
+Date: 2026-07-28
+
+Feature: ep-006-l1-structural-graph
+
+Task IDs: T007–T038
+
+Artifacts Updated: `tasks.md`, `validation-report.md`, `review-report.md`, EP-006 implementation/tests, and CI workflow lint scope.
+
+### Final status
+
+- Final review found no blockers: EP-006 is ready for PR with comments.
+- Fixed late blockers: Python relative File→File imports, scoped re-index import resolution to unchanged files, full re-index stale relationship cleanup, and CI Ruff workflow failure.
+- CI-shaped checks passed: orchestrator Ruff, orchestrator pytest `137 passed, 6 skipped, 3 deselected`, VS Code lint/tests, MCP tests/build.
+- Full orchestrator passed: `137 passed, 9 skipped, 13 warnings`; Compose API/Qdrant/FalkorDB smoke and selected live FalkorDB integration passed.
+
+### Residual risks
+
+- 1M-LOC full-index target remains unverified without an approved corpus.
+- Graph/query accuracy and latency evidence is synthetic fixture-scale only.
+- Qdrant client/server version warning remains deployment hygiene risk.
+- CI Ruff excludes only intentional parser fixture corpus `tests/fixtures/l1_structural_repo`.
+
+---
+
+## Handoff: Spec Kit → lead-developer-agent
+
+Date: 2026-07-28
+
+Feature: ep-013-okf-primary-knowledge
+
+Task IDs: T001–T030 (T029 complete; implementation T001–T028/T030 pending)
+
+Source Input: User direction — OKF primary, vector embeddings fallback; Spec-first; generated bundle from docs/specs/L1 metadata.
+
+Artifacts Created: `specs/ep-013-okf-primary-knowledge/{spec,plan,tasks,validation-report}.md`
+
+### What was completed
+
+- Spec Kit triad + planning validation APPROVED at 9.0/10.
+- Stories US-046 (generate OKF), US-047 (OKF-first retrieval), US-048 (vector fallback).
+- Defaults: cache-dir bundle, exact/token match, no Confirmed API field changes.
+- Retrieval order: OKF → L1 → BM25/vector. FalkorDB/Qdrant retained.
+
+### What failed / residual
+
+- Runtime implementation Not Executed.
+- EP-013 not yet in `docs/backlog/user-stories.md` (OQ-OKF-04 / T028).
+- No review-report.md until after implementation (T030).
+
+### Next instructions
+
+- Implement T001–T026 on `feature/ep-013-okf-primary-knowledge`.
+- Preserve Confirmed `/index` and `/context` shapes; hard-test L5 fallback.
+- After tests: update validation evidence and write `review-report.md`.
+
+### Blocking questions
+
+- None for implementation start.
+
+
+---
+
+## Handoff: backend-agent EP-013 OKF
+
+Date: 2026-07-28  
+Branch: `feature/ep-013-okf-primary-knowledge`  
+Tasks: T006–T028 complete (T001–T005, T029 prior; T030 review deferred)
+
+### What was completed
+
+- Settings: `okf_cache_dir`, `okf_enabled`, `okf_link_expand_limit`
+- Modules: `okf_bundle`, `okf_generate`, `okf_retrieve`; wired into `l5_index` + `context`
+- Evidence only in `final_context` + `metrics.trace` (`okf_status`); Confirmed shapes unchanged
+- Tests: unit/integration/contract OKF suites pass; opt-in eval recorded P/R/F1=1.0 on fixture
+- Docs: Proposed notes in architecture-overview, api-contract; backlog sync note (not Confirmed)
+- MCP: no change (stateless pass-through)
+- EP-006 L1 WIP preserved
+
+### Residual / next
+
+- T030: lead + reviewer `review-report.md` after testing-agent
+- Matching is lexical only (OQ-OKF-02); quality beyond fixture unproven
+- Do not claim V2 L2 connector completion
+
+### Blocking
+
+- None
+
+
+---
+
+## Handoff: testing-agent EP-013 OKF (T030 prep)
+
+Date: 2026-07-28  
+Branch: `feature/ep-013-okf-primary-knowledge`  
+Tasks: Runtime evidence for T030; T030 still open (no review-report.md)
+
+### What was completed
+
+- Executed OKF unit (11p), integration+no-exfil+contract (24p), L1/L5 regression (24p/1s), full orchestrator `-m "not perf"` (**154 passed, 7 skipped, 3 deselected**).
+- Opt-in eval: `CONTEXTOS_OKF_RETRIEVAL_EVAL=1` → 1 passed; fixture P/R/F1=1.0, fallback_miss=1 (measurement only).
+- MCP vitest: 4 passed (thin client; no OKF state).
+- SC-001..SC-005: Pass with executed evidence only (see validation-report Runtime Evidence).
+- Updated `specs/ep-013-okf-primary-knowledge/validation-report.md` (planning APPROVED preserved; runtime section added).
+- Defects fixed: none.
+
+### Residual / next
+
+- T030: review-pr-readiness-agent writes `review-report.md`.
+- Matching quality beyond fixture unproven; live FalkorDB/Compose smoke skipped.
+- Sandbox pytest can PermissionError on fixture `.git` — use unsandboxed for authoritative runs.
+
+### Blocking
+
+- None for review start.
+
+### Ready-for-PR-review
+
+- **Yes** (pending T030 review-report).
+
+---
+
+## Handoff: lead-developer-agent → review-pr-readiness-agent
+
+Date: 2026-07-28
+
+Feature: ep-013-okf-primary-knowledge
+
+Task IDs: T030
+
+Source Input: Backend T006–T028 + testing-agent runtime evidence green
+
+### What was completed
+
+- UI/UX / Frontend / VS Code: N/A
+- Implementation + validation-report Runtime Evidence present
+- Full orchestrator: 154 passed, 7 skipped; OKF suites green; MCP 4 passed
+
+### Next instructions
+
+- Write `specs/ep-013-okf-primary-knowledge/review-report.md`
+- Mark T030 complete if ready; Graphify-first
+- Do not invent Confirmed BRD/OKF claims; residual risks explicit
+
+### Blocking questions
+
+- None.
+
+
+---
+
+## Handoff: review-pr-readiness-agent EP-013 OKF (T030)
+
+Date: 2026-07-28  
+Branch: `feature/ep-013-okf-primary-knowledge`  
+Task: T030 complete
+
+### Verdict
+
+- **PR ready: Yes with comments**
+- Approval: APPROVED WITH CONCERNS — **8.4 / 10**
+- Report: `specs/ep-013-okf-primary-knowledge/review-report.md`
+
+### Key findings
+
+- Confirmed `/index` + `/context` shapes preserved; OKF only in `final_context` + `metrics.trace`
+- Order OKF → L1 → L5 hybrid; FalkorDB/Qdrant retained
+- Privacy: IgnorePolicy before generate; metadata-only; no index-time LLM exfil
+- MCP thin (no OKF state); UI/VS Code N/A
+- Runtime: 154 passed / 7 skipped; OKF suites + MCP 4p; SC-001–SC-005 executed
+- No V2 L2 connector completion claim; Proposed labeling intact
+
+### Residual (non-blocking for PR create)
+
+- CI green on this branch not yet verified
+- Lexical match + fixture eval only; live FalkorDB/Compose skipped
+- Qdrant client/server version skew
+
+### Blocking
+
+- None for PR creation
+
+### Next
+
+- Lead: open PR; require CI green; surface residual risks in PR body
+- Do not commit/push from review agent
+
+
+---
+
+## Handoff: lead-developer-agent (EP-013 complete)
+
+Date: 2026-07-28
+
+Feature: ep-013-okf-primary-knowledge
+
+Task IDs: T001–T030 all complete
+
+### Final status
+
+- UI/UX / Frontend / VS Code: N/A
+- Backend: OKF generate + OKF-first retrieve + L5 fallback shipped
+- Testing: 154 passed / 7 skipped orchestrator; MCP 4 passed; SC-001–005 Pass
+- Review: `review-report.md` — PR ready Yes with comments (8.4/10)
+- Graphify updated after OKF code
+
+### Residual
+
+- CI not verified on branch; lexical/fixture-only match; live FalkorDB/Compose skipped
+
+### Next
+
+- Commit/PR only when user asks; preserve EP-006 + unrelated WIP
+
+### Blocking
+
+- None
+
