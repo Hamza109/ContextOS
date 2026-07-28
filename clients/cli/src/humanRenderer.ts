@@ -10,8 +10,8 @@ export function formatHumanAskReport(response: ContextResponse): string {
   const lines: string[] = [
     "ContextOS ask (via POST /context)",
     `is_real=${response.is_real}`,
-    `tokens_raw=${m.tokens_raw} tokens_compacted=${m.tokens_compacted} ` +
-      `reduction_pct=${m.reduction_pct} latency_ms=${m.latency_ms}`,
+    `tokens_before=${m.tokens_before} tokens_after=${m.tokens_after} ` +
+      `saving_percent=${m.saving_percent} latency_ms=${m.latency_ms}`,
     "",
     "--- final_context ---",
     response.final_context.trim() ? response.final_context : "(empty)",

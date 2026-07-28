@@ -19,8 +19,8 @@ export function formatPackContextReport(response: ContextResponse): string {
   const m = response.metrics;
   const header = [
     "ContextOS Pack Context (via POST /context)",
-    `tokens_raw=${m.tokens_raw} tokens_compacted=${m.tokens_compacted} ` +
-      `reduction_pct=${m.reduction_pct} latency_ms=${m.latency_ms}`,
+    `tokens_before=${m.tokens_before} tokens_after=${m.tokens_after} ` +
+      `saving_percent=${m.saving_percent} latency_ms=${m.latency_ms}`,
     `is_real=${response.is_real}`,
     "",
   ].join("\n");

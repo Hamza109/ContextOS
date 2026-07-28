@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "contextos": {
+      "command": "/Users/hamzahamal/ContextOS/clients/mcp/node_modules/.bin/tsx",
+      "args": ["/Users/hamzahamal/ContextOS/clients/mcp/src/bin.ts"],
+      "env": {
+        "CONTEXTOS_ORCHESTRATOR_BASE_URL": "http://127.0.0.1:8000"
+      }
+    }
+  }
+}

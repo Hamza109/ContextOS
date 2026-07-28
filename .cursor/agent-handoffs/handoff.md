@@ -1175,3 +1175,22 @@ Task IDs: T001–T036 orchestrated
 
 - None; OQs remain Proposed
 
+---
+
+## Handoff: ContextOS MCP agent wiring
+
+Date: 2026-07-28
+
+Branch: feature/contextos-mcp-agent-wiring
+
+### What was completed
+
+- `clients/mcp/` thin MCP server: `contextos_health`, `contextos_ask` → Confirmed POST /context (+ Proposed max_chars)
+- `.cursor/mcp.json` + `.cursor/rules/contextos-first.mdc` (alwaysApply)
+- Client response-shape fix (blast_radius/memory objects + Confirmed metrics keys) included on branch
+
+### Next
+
+- Enable MCP in Cursor (reload); keep orchestrator on :8000; index repo then call `contextos_ask`
+- Optional: commit/PR this branch
+

@@ -31,13 +31,13 @@ function contextOkBody(overrides: Partial<{ final_context: string; relevant_file
   return {
     final_context: overrides.final_context ?? "packed context about auth",
     metrics: {
-      tokens_raw: 100,
-      tokens_compacted: 40,
-      reduction_pct: 60,
-      latency_ms: 12,
+      tokens_before: 100,
+      tokens_after: 40,
+      saving_percent: 60,
+      trace: { duration_ms: 12 },
     },
-    blast_radius: [],
-    memory: [],
+    blast_radius: {},
+    memory: {},
     relevant_files: overrides.relevant_files ?? ["src/auth.ts", { path: "src/login.ts" }],
     is_real: true,
   };
