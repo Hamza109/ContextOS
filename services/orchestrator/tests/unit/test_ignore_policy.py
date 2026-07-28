@@ -10,8 +10,8 @@ from pathlib import Path
 from app.security.ignore_policy import (
     HARD_EXCLUDE_DIR_NAMES,
     HARD_EXCLUDE_FILE_NAMES,
-    IgnorePolicy,
     SECRET_FILE_GLOBS,
+    IgnorePolicy,
 )
 from tests.fixtures.ignore_exclusion_repo import (
     ALLOWED_REL_PATHS,

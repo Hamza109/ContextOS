@@ -1262,3 +1262,20 @@ Future:
 | V2 / P3 | 14 (US-028..US-041) |
 | Future | 4 (US-042..US-045) |
 | Ready for Spec Writer | **Yes** (start EP-001..EP-005); V1/V2 drafts usable with clarification notes |
+
+---
+
+## Proposed backlog sync note (EP-013 / OQ-OKF-04) — not Confirmed BRD
+
+The following stories are **Proposed** Spec Kit extensions from user-directed OKF work.
+They are **not** Confirmed BRD backlog items and do **not** claim V2 L2 connector completion:
+
+| ID | Title | Evidence |
+|----|-------|----------|
+| EP-013 | OKF Primary Knowledge Format | `specs/ep-013-okf-primary-knowledge/` |
+| US-046 | Generate OKF knowledge bundle on index | Proposed |
+| US-047 | OKF-first retrieval on `/context` | Proposed |
+| US-048 | Preserve BM25/vector fallback | Proposed |
+
+Promotion into Confirmed counts above requires product/backlog owner confirmation.
+

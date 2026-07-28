@@ -44,5 +44,5 @@ def test_index_upserts_to_qdrant(tmp_path: Path, monkeypatch) -> None:
     )
     assert result.files_indexed >= 1
     assert result.embeddings >= 1
-    assert result.graph_nodes == 0
+    assert result.graph_nodes > 0
     assert result.time_ms >= 0

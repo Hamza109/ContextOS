@@ -30,10 +30,42 @@ class Settings(BaseSettings):
 
     embedding_dim: int = Field(default=384, description="Confirmed dimension")
 
+    # --- EP-006 approved local/VPC FalkorDB and L1 cache knobs ---
+    falkordb_url: str = Field(
+        default="redis://localhost:6379",
+        description="Proposed local/VPC FalkorDB URL; credentials come from environment only",
+    )
+    falkordb_graph_prefix: str = Field(
+        default="contextos",
+        description="Proposed graph-name prefix used for repository isolation",
+    )
+    falkordb_timeout_seconds: float = Field(
+        default=5.0,
+        gt=0,
+        description="Proposed FalkorDB socket/connect timeout",
+    )
+    l1_cache_max_entries: int = Field(default=10_000, gt=0)
+    l1_cache_ttl_seconds: float = Field(default=300.0, gt=0)
+
     # Proposed: pack artifact cache keyed by repo_name (OQ-PACK provisional — T018)
     pack_cache_dir: Path = Field(
         default=Path("/tmp/contextos/packs"),
         description="Proposed provisional pack cache root (OQ-PACK open)",
+    )
+
+    # --- EP-013 Proposed OKF knobs (NOT Confirmed Appendix D) ---
+    okf_cache_dir: Path = Field(
+        default=Path("/tmp/contextos/okf"),
+        description="Proposed OKF bundle cache root beside pack cache (OQ-OKF-01)",
+    )
+    okf_enabled: bool = Field(
+        default=True,
+        description="Proposed: enable OKF generate on /index and retrieve on /context",
+    )
+    okf_link_expand_limit: int = Field(
+        default=5,
+        gt=0,
+        description="Proposed: max linked concepts to expand on OKF hit",
     )
 
     # Proposed: local inference (Ollama) for query-time non-exfil path (FR-020); unused by /index

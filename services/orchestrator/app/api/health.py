@@ -1,9 +1,10 @@
-"""GET / health — report qdrant; falkor unused/degraded OK for EP-001 / EP-005 A-07."""
+"""GET / health with unchanged public fields and live L1/L5 dependencies."""
 
 from __future__ import annotations
 
 from fastapi import APIRouter
 
+from app.adapters.falkordb_store import FalkorDBStore
 from app.adapters.qdrant_store import QdrantStore
 from app.config import get_settings
 
@@ -16,7 +17,7 @@ router = APIRouter(tags=["health"])
     description=(
         "Confirmed fields: status (ok|degraded|error), pipeline, falkor, qdrant "
         "(api-contract §2.1). "
-        "Falkor may be unused/absent for MVP without failing search readiness (A-07). "
+        "FalkorDB backs L1 and Qdrant backs L5; either may report degraded readiness. "
         "HTTP status mapping is Proposed only (OQ-HTTP-Health): e.g. 200 for "
         "healthy/degraded body, 503 if critical deps down — MUST NOT Confirmed-freeze. "
         "Degraded search response shape remains Proposed (OQ-Degraded-Shape). "
@@ -40,15 +41,22 @@ router = APIRouter(tags=["health"])
 def health() -> dict:
     settings = get_settings()
     qdrant_status = QdrantStore(settings).health()
-    # Falkor unused for EP-001 graph writes — report unused/degraded, do not fail MVP
-    falkor_status = "unused"
+    if settings.falkordb_url.startswith("memory://"):
+        falkor_status = "ok"
+    else:
+        falkor_status = FalkorDBStore(settings).health()
 
-    if qdrant_status == "ok":
+    if qdrant_status == "ok" and falkor_status == "ok":
         status = "ok"
-        pipeline = "l5_index_ready"
+        pipeline = "l1_l5_index_ready"
     else:
         status = "degraded"
-        pipeline = "l5_index_qdrant_unavailable"
+        unavailable = []
+        if falkor_status != "ok":
+            unavailable.append("falkordb")
+        if qdrant_status != "ok":
+            unavailable.append("qdrant")
+        pipeline = f"index_dependencies_unavailable:{','.join(unavailable)}"
 
     return {
         "status": status,

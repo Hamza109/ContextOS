@@ -1,7 +1,4 @@
-"""L5 index orchestration: walk → filter → pack → chunk → embed → upsert.
-
-graph_nodes MUST be 0 for EP-001 MVP (no L1 writes).
-"""
+"""FastAPI index orchestration: shared policy → L5 index + L1 graph."""
 
 from __future__ import annotations
 
@@ -17,9 +14,18 @@ from app.adapters.qdrant_store import QdrantStore, content_hash
 from app.config import Settings, get_settings
 from app.security.consent_gate import index_path_may_call_external_llm
 from app.security.ignore_policy import IgnorePolicy
+from app.services.l1_graph import L1GraphService
 from app.services.l5_chunk import Chunk, chunk_file
 from app.services.l5_pack import PackResult, pack_repository
-from app.telemetry.indexing import index_span, record_index_counts, record_pack_attributes
+from app.services.l1_entity_cache import get_l1_entity_cache
+from app.services.okf_generate import generate_okf_bundle
+from app.telemetry.indexing import (
+    index_span,
+    record_index_counts,
+    record_l1_attributes,
+    record_okf_attributes,
+    record_pack_attributes,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +61,7 @@ def run_index(
     settings: Settings | None = None,
     embedder: EmbeddingBackend | None = None,
     store: QdrantStore | None = None,
+    graph_service: L1GraphService | None = None,
     skip_embed: bool = False,
 ) -> IndexResult:
     """Full or Proposed incremental index. Never calls external LLM."""
@@ -93,31 +100,53 @@ def run_index(
                 exclusions=pack.files_excluded,
             )
 
-            if skip_embed:
-                elapsed_ms = int((time.perf_counter() - started) * 1000)
-                result = IndexResult(
-                    files_indexed=pack.files_packed,
-                    graph_nodes=0,
-                    embeddings=0,
-                    time_ms=elapsed_ms,
-                    pack=pack,
-                    mode=mode,
-                )
-                record_index_counts(
-                    span,
-                    files_indexed=result.files_indexed,
-                    embeddings=result.embeddings,
-                    graph_nodes=0,
-                    time_ms=result.time_ms,
-                    exclusions=pack.files_excluded,
-                )
-                return result
-
             policy = IgnorePolicy.from_repo(root)
-            allowed = walk_allowed_files(root, policy)
+            all_allowed = walk_allowed_files(root, policy)
+            allowed = all_allowed
             if scope:
                 wanted = set(scope)
-                allowed = [p for p in allowed if p.relative_to(root).as_posix() in wanted]
+                allowed = [
+                    p for p in all_allowed if p.relative_to(root).as_posix() in wanted
+                ]
+
+            l1 = graph_service or L1GraphService(cfg)
+            l1_result = l1.generate(
+                repo_name,
+                root,
+                all_allowed,
+                affected_paths=scope if mode == "incremental" else None,
+            )
+            record_l1_attributes(
+                span,
+                parse_ms=l1_result.parse_ms,
+                persist_ms=l1_result.persist_ms,
+                parsed_files=l1_result.parsed_files,
+                graph_nodes=l1_result.graph_nodes,
+                unsupported_files=l1_result.unsupported_files,
+                malformed_files=l1_result.malformed_files,
+            )
+
+            # EP-013 Proposed: OKF generate after eligibility + L1; failures must not
+            # invent Confirmed HTTP semantics or break L5/L1 outcomes.
+            l1_entities = get_l1_entity_cache().lookup(
+                repo_name, [], limit=40
+            ).entities
+            okf_result = generate_okf_bundle(
+                root,
+                repo_name,
+                settings=cfg,
+                policy=policy,
+                allowed_paths=all_allowed,
+                index_revision=l1_result.index_revision,
+                l1_entities=l1_entities,
+            )
+            record_okf_attributes(
+                span,
+                status=okf_result.status,
+                concepts_written=okf_result.concepts_written,
+                sources_used=okf_result.sources_used,
+                duration_ms=okf_result.duration_ms,
+            )
 
             all_chunks: list[Chunk] = []
             hashes: list[str] = []
@@ -127,11 +156,10 @@ def run_index(
                     all_chunks.append(ch)
                     hashes.append(content_hash(ch.content))  # Proposed content_hash
 
-            emb = embedder or get_embedder(cfg)
-            qdrant = store or QdrantStore(cfg)
-
             embeddings_count = 0
-            if all_chunks:
+            if all_chunks and not skip_embed:
+                emb = embedder or get_embedder(cfg)
+                qdrant = store or QdrantStore(cfg)
                 texts = [c.content for c in all_chunks]
                 vectors = emb.embed(texts)
                 # Defense: ensure no accidental HTTP LLM in embedder type
@@ -163,7 +191,7 @@ def run_index(
 
             result = IndexResult(
                 files_indexed=len(allowed),
-                graph_nodes=0,  # MVP: no L1 writes
+                graph_nodes=l1_result.graph_nodes,
                 embeddings=embeddings_count,
                 time_ms=elapsed_ms,
                 pack=pack,
@@ -173,7 +201,7 @@ def run_index(
                 span,
                 files_indexed=result.files_indexed,
                 embeddings=result.embeddings,
-                graph_nodes=0,
+                graph_nodes=result.graph_nodes,
                 time_ms=result.time_ms,
                 exclusions=pack.files_excluded,
             )

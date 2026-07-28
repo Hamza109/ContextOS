@@ -6,14 +6,23 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "sh", "-c", "exec 3<>/dev/tcp/127.0.0.1/6333"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
-  # FalkorDB optional for EP-001 — unused for graph writes (graph_nodes=0).
-  # Present so health can report degraded/unused without failing MVP indexing.
   falkordb:
-    image: falkordb/falkordb:latest
-    profiles: ["with-falkor"]
+    image: falkordb/falkordb:v4.12.0
     ports:
       - "6379:6379"
+    volumes:
+      - falkordb_data:/var/lib/falkordb/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "PING"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
   api:
     build:
@@ -23,6 +32,9 @@ services:
       - "8000:8000"
     environment:
       CONTEXTOS_QDRANT_URL: http://qdrant:6333
+      CONTEXTOS_FALKORDB_URL: redis://falkordb:6379
+      CONTEXTOS_FALKORDB_GRAPH_PREFIX: contextos
+      CONTEXTOS_FALKORDB_TIMEOUT_SECONDS: "5"
       CONTEXTOS_EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
       # Proposed: local inference hook (Ollama) — query-time only, not indexing
       CONTEXTOS_LOCAL_INFERENCE_URL: http://host.docker.internal:11434
@@ -35,7 +47,10 @@ services:
       - pack_cache:/var/contextos/packs
       # Mount host repos at runtime as needed, e.g. -v /path/to/repo:/repos/myrepo
     depends_on:
-      - qdrant
+      qdrant:
+        condition: service_healthy
+      falkordb:
+        condition: service_healthy
 
   # --- EP-003 Proposed: local Serena MCP for orchestrator Pack Context enrichment ---
   # Serena is typically a host-local MCP process (ADR-005), not a required Compose service.
@@ -53,4 +68,5 @@ services:
 
 volumes:
   qdrant_data:
+  falkordb_data:
   pack_cache:

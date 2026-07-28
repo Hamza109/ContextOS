@@ -37,7 +37,9 @@ def test_context_hybrid_signals_keyword_and_semantic(tmp_path: Path, monkeypatch
         encoding="utf-8",
     )
     (root / "semantic_auth.py").write_text(
-        "def verify_credentials(user, secret):\n    '''Validate identity for session.'''\n    return True\n",
+        "def verify_credentials(user, secret):\n"
+        "    '''Validate identity for session.'''\n"
+        "    return True\n",
         encoding="utf-8",
     )
     monkeypatch.setenv("CONTEXTOS_PACK_CACHE_DIR", str(tmp_path / "packs"))

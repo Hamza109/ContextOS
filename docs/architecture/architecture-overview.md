@@ -53,6 +53,7 @@ Logical pipeline (full platform; phase availability follows roadmap):
 Request (IDE / CLI / CI webhook)
   → L6 Recall (Cognee) → L2 Enrich (Graphify)     [V2]
   → L5 Pack / Search (Repomix, grepai, Qdrant)    [MVP+]
+  → Proposed OKF-first concept lookup (EP-013)     [Proposed]
   → L3 Resolve (Serena)                             [MVP+]
   → L1 Expand (CodeGraph / FalkorDB)                [V1+]
   → L4 Compress (Headroom)                          [V1+]
@@ -61,7 +62,8 @@ Request (IDE / CLI / CI webhook)
 
 **MVP subset:** Ingest & pack (L5) → Symbol resolve (L3) → Basic phase-aware prompt assembly.  
 **V1 adds:** Structural expand (L1) → Compress & budget (L4) → graph/blast/telemetry surfaces.  
-**V2 adds:** Multi-modal enrich (L2) → Memory recall/governance (L6).
+**V2 adds:** Multi-modal enrich (L2) → Memory recall/governance (L6).  
+**Proposed (EP-013):** OKF v0.2 local knowledge bundles generated on index; retrieval precedence OKF → L1 structural enrichment → L5 BM25/vector. Does not claim V2 L2 connector completion.
 
 ### 2.3 Boundary discipline (Confirmed — constitution V)
 
@@ -81,8 +83,9 @@ Request (IDE / CLI / CI webhook)
 | Layer | Responsibility | Primary tech (Confirmed) | Roadmap |
 |-------|----------------|--------------------------|---------|
 | **L5** | Repo flatten/pack, hybrid BM25+vector search, MMR, phase-aware prompt assembly, embedding refresh | Repomix-style, grepai/claude-context, Qdrant, all-MiniLM-L6-v2 | MVP |
+| **L5 + Proposed OKF** | **Proposed (EP-013):** generate local OKF v0.2 knowledge bundles on `POST /index`; prefer OKF concept lookup before L5 hybrid search on `POST /context`. FalkorDB/Qdrant remain runtime stores. Evidence only in `final_context` + `metrics.trace`. | Markdown+YAML OKF bundle (cache sibling of packs) | Proposed user-directed |
 | **L3** | Definition, references, hover docs, rename scope, symbol-aware edit planning | Serena MCP | MVP |
-| **L1** | Typed structural graph, blast radius, dependency visualization, hot entities / NL structural queries | CodeGraph/GitNexus, FalkorDB, tree-sitter/regex, codebase-memory-mcp | V1 |
+| **L1** | Typed structural graph, blast radius, dependency visualization, hot entities / NL structural queries | FastAPI, FalkorDB, tree-sitter language pack / import-only regex fallback; stateless MCP client | V1 |
 | **L4** | Token budgets, adaptive summarization, relevance scoring, compression telemetry | Headroom-style | V1 |
 | **L2** | Multi-modal ingestion & cross-artifact linking | Graphify-style | V2 |
 | **L6** | Entity memory, temporal edges, recall explainability, TTL/decay/pin/forget, PII redaction | Cognee-style | V2 |
@@ -108,7 +111,7 @@ Request (IDE / CLI / CI webhook)
 | FR-07 Structural graph | L1 | V1 | Indexer → FalkorDB; `POST /index` graph_nodes |
 | FR-08 Blast radius | L1 | V1 | `GET /blast/{file_name}`; `POST /context` blast_radius field |
 | FR-09 Graph visualization | L1 | V1 | `GET /graph.html?repo=`; React Flow Webview |
-| FR-10 Codebase memory cache | L1 | V1 | codebase-memory-mcp (**integration contract NEEDS CLARIFICATION**) |
+| FR-10 Codebase memory cache | L1 | V1 | FastAPI-owned revision-scoped metadata cache; existing `POST /context` composition; stateless MCP pass-through |
 | FR-11 Token budgets | L4 | V1 | Headroom in `POST /context` path |
 | FR-12 Adaptive summarization | L4 | V1 | Headroom in context pipeline |
 | FR-13 Compression telemetry | L4 | V1 | OTel + `contextos_token_dashboard.html` |

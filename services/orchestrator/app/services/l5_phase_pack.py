@@ -174,11 +174,11 @@ def _phase_excerpt(hit: SearchHit, phase: str) -> str:
         body = "\n".join(sigs[:20]) if sigs else "\n".join(lines[:20])
         return f"[DESIGN VIEW]\n{body}"
     if phase == "Test":
-        return f"[TEST VIEW]\n" + "\n".join(lines[:40])
+        return "[TEST VIEW]\n" + "\n".join(lines[:40])
     if phase == "Deploy":
-        return f"[DEPLOY VIEW]\n" + "\n".join(lines[:25])
+        return "[DEPLOY VIEW]\n" + "\n".join(lines[:25])
     # Dev — fuller implementation
-    return f"[DEV VIEW]\n" + "\n".join(lines[:60])
+    return "[DEV VIEW]\n" + "\n".join(lines[:60])
 
 
 def _safe_cdata(text: str) -> str:

@@ -58,6 +58,10 @@ def citations_present(packed: str) -> bool:
     """Behavioral check: file:line + confidence attributes appear (no invented JSON keys)."""
     if not packed:
         return False
-    has_line = ('line="' in packed) or ("file_line=" in packed) or (":" in packed and "confidence" in packed)
+    has_line = (
+        ('line="' in packed)
+        or ("file_line=" in packed)
+        or (":" in packed and "confidence" in packed)
+    )
     has_conf = "confidence=" in packed or "confidence:" in packed
     return bool(has_line and has_conf)

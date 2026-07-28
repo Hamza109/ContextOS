@@ -34,6 +34,16 @@ describe("formatAskPack", () => {
     expect(text).toContain("truncated by contextos_ask max_chars");
     expect(text.length).toBeLessThan(500);
   });
+
+  it("passes FastAPI-owned L1 enrichment through without MCP state", () => {
+    const enriched =
+      '<base/>\n<l1_structural_evidence index_revision="r1">' +
+      '<entity path="src/auth.py" citation="src/auth.py:12" />' +
+      "</l1_structural_evidence>";
+    const text = formatAskPack(sample({ final_context: enriched }), 50_000);
+    expect(text).toContain("<l1_structural_evidence");
+    expect(text).toContain("src/auth.py:12");
+  });
 });
 
 describe("postIndex", () => {

@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
-from app.services.l5_citations import attach_citations, citations_present, format_citation_xml
-from app.services.l5_citations import citation_for_hit
+from app.services.l5_citations import (
+    attach_citations,
+    citation_for_hit,
+    citations_present,
+    format_citation_xml,
+)
 from app.services.l5_search import SearchHit
 
 

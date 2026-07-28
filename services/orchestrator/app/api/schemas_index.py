@@ -25,7 +25,7 @@ class IndexRequest(BaseModel):
 
 
 class IndexResponse(BaseModel):
-    """Confirmed response fields only (Appendix D / api-contract §2.2)."""
+    """Confirmed response fields only; graph_nodes now carries persisted L1 count."""
 
     files_indexed: int
     graph_nodes: int

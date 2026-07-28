@@ -22,10 +22,12 @@ from app.adapters.qdrant_store import QdrantStore
 from app.adapters.serena_mcp import InMemorySerenaDouble, SerenaMCPAdapter, SerenaMCPConfig
 from app.api.schemas_context import ContextMetrics, ContextRequest, ContextResponse
 from app.config import get_settings
+from app.services.l1_structural_query import StructuralQueryService
 from app.services.l3_symbol import SymbolService, attach_safe_edit_plan
-from app.services.l5_phase_pack import DEFAULT_PHASE, pack_for_phase
 from app.services.l5_pack import load_pack_by_repo
+from app.services.l5_phase_pack import DEFAULT_PHASE, pack_for_phase
 from app.services.l5_search import hits_to_relevant_files, hybrid_search
+from app.services.okf_retrieve import attach_okf_evidence, retrieve_okf
 from app.telemetry.context import child_span, context_span, record_duration_ms
 from app.telemetry.symbol import symbol_span
 
@@ -37,7 +39,7 @@ router = APIRouter(tags=["context"])
 @router.post(
     "/context",
     response_model=ContextResponse,
-    summary="Retrieve hybrid-search packed context (L5) + optional L3 safe-edit enrichment",
+    summary="Retrieve L5 context with optional L1/L3 enrichment",
     description=(
         "Confirmed request: query, file (optional), repo, top_k. "
         "Confirmed response: final_context, metrics "
@@ -54,6 +56,10 @@ router = APIRouter(tags=["context"])
         "FR-019 consumer note: future contextos ask / extension Ask SHOULD call this API; "
         "full Ask <3 clicks / CLI remain EP-004 (EP-003 delivers Pack Context surface only). "
         "No L4 Headroom gate (ADR-006). No L1 blast expand."
+        " EP-006 may append cited metadata-only L1 structural evidence for supported "
+        "location/ownership questions; failures preserve L5 and blast remains excluded. "
+        "Proposed EP-013: OKF-first cited evidence may be appended inside final_context "
+        "before L1 enrichment; miss/error preserves L5 hybrid fallback (no new fields)."
     ),
     responses={
         200: {"description": "Proposed: success (OQ-HTTP-/context)"},
@@ -90,6 +96,9 @@ def post_context(body: ContextRequest) -> ContextResponse:
             except Exception:  # noqa: BLE001
                 pass
 
+        # EP-013 Proposed: OKF lookup before L1/L5 evidence enrichment; miss → L5.
+        okf_result = retrieve_okf(body.repo, body.query, settings=settings)
+
         try:
             embedder = get_embedder(settings, stub=_use_stub_embedder())
             store = QdrantStore(settings)
@@ -109,7 +118,7 @@ def post_context(body: ContextRequest) -> ContextResponse:
             logger.exception("context search failed")
             raise HTTPException(status_code=500, detail=f"context search failed: {exc}") from exc
 
-        if pack is None and not result.hits:
+        if pack is None and not result.hits and okf_result.status != "hit":
             raise HTTPException(
                 status_code=404,
                 detail=f"repo not indexed or pack missing: {body.repo} (Proposed 404)",
@@ -127,6 +136,8 @@ def post_context(body: ContextRequest) -> ContextResponse:
             record_duration_ms(pspan, "duration_ms", (time.perf_counter() - t_pack) * 1000)
 
         final_context = packed.final_context
+        # OKF evidence first (before L1), inside Confirmed final_context only.
+        final_context = attach_okf_evidence(final_context, okf_result)
         safe_edit_attached = False
         if settings.context_safe_edit_enrichment:
             final_context, safe_edit_attached = _maybe_attach_safe_edit(
@@ -134,6 +145,24 @@ def post_context(body: ContextRequest) -> ContextResponse:
                 body=body,
                 settings=settings,
             )
+        l1_status = "not_attempted"
+        l1_cache_hit = False
+        l1_entity_count = 0
+        l1_duration_ms = 0
+        try:
+            enrichment = StructuralQueryService(settings).enrich(
+                final_context,
+                repo=body.repo,
+                query=body.query,
+            )
+            final_context = enrichment.final_context
+            l1_status = enrichment.status
+            l1_cache_hit = enrichment.cache_hit
+            l1_entity_count = enrichment.entity_count
+            l1_duration_ms = enrichment.duration_ms
+        except Exception:  # L1 query enrichment must always degrade to L5
+            logger.warning("L1 structural enrichment unavailable", exc_info=True)
+            l1_status = "l1_unavailable"
 
         trace: dict[str, Any] = {
             "phase": packed.phase,
@@ -147,6 +176,14 @@ def post_context(body: ContextRequest) -> ContextResponse:
             "l4_gate": False,
             # Proposed EP-003 trace note only — not a Confirmed Appendix D field
             "l3_safe_edit_enrichment": safe_edit_attached,
+            "l1_structural_status": l1_status,
+            "l1_cache_hit": l1_cache_hit,
+            "l1_entity_count": l1_entity_count,
+            "l1_duration_ms": l1_duration_ms,
+            # Proposed EP-013 — non-sensitive status/timing only
+            "okf_status": okf_result.status,
+            "okf_concept_count": len(okf_result.concepts),
+            "okf_duration_ms": okf_result.duration_ms,
         }
         record_duration_ms(span, "duration_ms", float(trace["duration_ms"]))
 

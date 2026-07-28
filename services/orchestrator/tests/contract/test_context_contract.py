@@ -28,7 +28,7 @@ def test_context_request_confirmed_fields() -> None:
 
 
 def test_context_response_confirmed_fields() -> None:
-    assert CONFIRMED_RESPONSE_FIELDS.issubset(set(ContextResponse.model_fields.keys()))
+    assert set(ContextResponse.model_fields.keys()) == CONFIRMED_RESPONSE_FIELDS
 
 
 def test_context_metrics_confirmed_keys() -> None:
@@ -80,3 +80,8 @@ def test_openapi_has_no_confirmed_symbol_rest_paths() -> None:
     assert "/context" in paths
     for p in ("/symbol", "/definition", "/references", "/rename-scope", "/serena"):
         assert p not in paths
+
+
+def test_no_l1_cache_or_graph_response_fields() -> None:
+    fields = set(ContextResponse.model_fields)
+    assert fields.isdisjoint({"l1", "graph", "entities", "cache", "index_revision"})

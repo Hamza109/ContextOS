@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class SerenaUnavailableError(RuntimeError):
-    """Proposed: MCP/Serena session unavailable (OQ-MCP-Fallback — clear error, not Confirmed UX)."""
+    """Proposed MCP/Serena session unavailable error."""
 
 
 class SerenaUnsupportedLanguageError(ValueError):

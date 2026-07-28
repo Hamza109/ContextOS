@@ -85,6 +85,44 @@ def record_pack_attributes(
     span.set_attribute("pack.exclusions", exclusions)
 
 
+def record_l1_attributes(
+    span: Any,
+    *,
+    parse_ms: int,
+    persist_ms: int,
+    parsed_files: int,
+    graph_nodes: int,
+    unsupported_files: int,
+    malformed_files: int,
+) -> None:
+    """Record aggregate L1 measurements only; never paths or source content."""
+    if span is None or isinstance(span, _NullSpan):
+        return
+    span.set_attribute("l1.parse_ms", parse_ms)
+    span.set_attribute("l1.persist_ms", persist_ms)
+    span.set_attribute("l1.parsed_files", parsed_files)
+    span.set_attribute("l1.graph_nodes", graph_nodes)
+    span.set_attribute("l1.unsupported_files", unsupported_files)
+    span.set_attribute("l1.malformed_files", malformed_files)
+
+
+def record_okf_attributes(
+    span: Any,
+    *,
+    status: str,
+    concepts_written: int,
+    sources_used: int,
+    duration_ms: int,
+) -> None:
+    """Record Proposed OKF generate counts/timings/status only — never content."""
+    if span is None or isinstance(span, _NullSpan):
+        return
+    span.set_attribute("okf.status", status)
+    span.set_attribute("okf.concepts_written", concepts_written)
+    span.set_attribute("okf.sources_used", sources_used)
+    span.set_attribute("okf.duration_ms", duration_ms)
+
+
 class _NullSpan:
     def set_attribute(self, *_args: Any, **_kwargs: Any) -> None:
         return None

@@ -1,4 +1,4 @@
-"""ContextOS FastAPI orchestrator entrypoint (EP-001 + EP-002 L5 + EP-003 L3 enrichment)."""
+"""ContextOS FastAPI orchestrator entrypoint with L5, L3, and EP-006 L1."""
 
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ async def lifespan(_app: FastAPI):
     # Placeholder lifespan — model warm-up optional; avoid blocking cold start hard.
     settings = get_settings()
     settings.pack_cache_dir.mkdir(parents=True, exist_ok=True)
+    settings.okf_cache_dir.mkdir(parents=True, exist_ok=True)
     yield
 
 
@@ -27,14 +28,16 @@ app = FastAPI(
     version="0.3.0",
     description=(
         "EP-001 L5 Repository Packing & Indexing + EP-002 Hybrid Search & Phase Packing "
-        "+ EP-003 L3 Symbol (Serena) Pack Context enrichment. "
+        "+ EP-003 L3 Symbol enrichment + EP-006 L1 structural graph/evidence "
+        "+ Proposed EP-013 OKF primary knowledge (generate on /index; OKF-first /context). "
         "Confirmed Appendix D HTTP only: GET /, POST /index, POST /context "
         "(+ health). No Confirmed L3 symbol REST (api-contract §3; MCP-first Option A; "
         "OQ-Symbol-REST open). "
         "Proposed: Serena MCP knobs; safe-edit delimited block inside final_context "
-        "(OQ-Safe-Edit-Shape); citation XML attributes (OQ-11). "
+        "(OQ-Safe-Edit-Shape); citation XML attributes (OQ-11); OKF evidence inside "
+        "final_context + metrics.trace only (no new Confirmed fields). "
         "Local embeddings only on index path; no external LLM exfil. "
-        "Out of scope: Confirmed symbol REST, L1 blast, L4 Headroom product, L2/L6, "
+        "Out of scope: Confirmed symbol REST, blast/visualization, L4 product, L2/L6, "
         "rename execution sandbox, full EP-004 CLI/Ask, JetBrains, extension DX."
     ),
     lifespan=lifespan,
