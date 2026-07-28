@@ -75,7 +75,7 @@ export async function runPackContext(
     });
     deps.presentReport(formatPackContextReport(response));
     deps.showInformationMessage(
-      `ContextOS: Pack Context ready (${response.metrics.tokens_compacted} compacted tokens)`,
+      `ContextOS: Pack Context ready (${response.metrics.tokens_after} compacted tokens)`,
     );
     return response;
   } catch (err) {

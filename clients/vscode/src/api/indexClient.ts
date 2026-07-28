@@ -72,7 +72,7 @@ export async function postIndex(
   const text = await response.text();
   if (!response.ok) {
     throw new IndexClientError(
-      `POST /index failed: HTTP ${response.status}`,
+      `POST /index failed: HTTP ${response.status}${formatApiDetail(text)}`,
       response.status,
       text,
     );
@@ -104,6 +104,18 @@ function assertIndexResponse(value: unknown): IndexResponse {
     embeddings: v.embeddings as number,
     time_ms: v.time_ms as number,
   };
+}
+
+function formatApiDetail(text: string): string {
+  try {
+    const parsed = JSON.parse(text) as { detail?: unknown };
+    if (typeof parsed.detail === "string" && parsed.detail.trim()) {
+      return ` — ${parsed.detail.trim()}`;
+    }
+  } catch {
+    // ignore non-JSON error bodies
+  }
+  return text.trim() ? ` — ${text.trim().slice(0, 200)}` : "";
 }
 
 function isAbortError(err: unknown): boolean {

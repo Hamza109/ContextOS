@@ -94,10 +94,14 @@ export function buildAskContextRequest(opts: {
 function formatAskFailureMessage(err: unknown): string {
   if (err instanceof ContextClientError) {
     if (err.status === undefined) {
-      // Network / unreachable (fetch threw before HTTP status)
-      return ASK_ERROR_UNREACHABLE;
+      // Network / unreachable only when fetch threw (message carries "network error")
+      if (/network error/i.test(err.message) || /fetch is not available/i.test(err.message)) {
+        return ASK_ERROR_UNREACHABLE;
+      }
+      // Validation / parse failures after a response — do not mislabel as unreachable
+      return `${ASK_ERROR_HTTP} (${err.message})`;
     }
-    // Non-2xx or invalid body after HTTP response
+    // Non-2xx after HTTP response
     return `${ASK_ERROR_HTTP} (${err.message})`;
   }
   if (err instanceof Error) {
@@ -164,7 +168,7 @@ export async function runAskContext(
 
     deps.presentReport(formatAskContextReport(response));
     deps.showInformationMessage(
-      `ContextOS: Ask ready (${response.metrics.tokens_compacted} compacted tokens)`,
+      `ContextOS: Ask ready (${response.metrics.tokens_after} compacted tokens)`,
     );
     return response;
   } catch (err) {

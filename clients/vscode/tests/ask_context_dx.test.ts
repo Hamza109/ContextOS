@@ -74,13 +74,13 @@ function contextOkBody(final_context: string, relevant_files: unknown[] = []) {
   return {
     final_context,
     metrics: {
-      tokens_raw: 100,
-      tokens_compacted: 40,
-      reduction_pct: 60,
-      latency_ms: 12,
+      tokens_before: 100,
+      tokens_after: 40,
+      saving_percent: 60,
+      trace: { duration_ms: 12 },
     },
-    blast_radius: [],
-    memory: [],
+    blast_radius: {},
+    memory: {},
     relevant_files,
     is_real: true,
   };
@@ -183,7 +183,7 @@ describe("ask_context_dx (T035/T036/T038/T040–T046)", () => {
     expect(report).toContain("relevant_files");
     expect(report).toContain("src/auth.ts");
     expect(formatRelevantFiles([{ path: "a.ts" }])).toContain("a.ts");
-    expect(formatAskContextReport(response!)).toContain("tokens_compacted");
+    expect(formatAskContextReport(response!)).toContain("tokens_after");
     expect(logLatency).toHaveBeenCalled();
     expect(ASK_LATENCY_LOG_PREFIX).toBe("[ContextOS][obs][ask]");
   });

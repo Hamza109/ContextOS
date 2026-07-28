@@ -39,23 +39,29 @@ export interface ContextRequest {
   top_k: number;
 }
 
-/** Confirmed ContextMetrics subset used by DX presentation. */
+/**
+ * Confirmed ContextMetrics keys (Appendix D / api-contract §2.3).
+ * latency_ms is observational — taken from metrics.trace.duration_ms when present.
+ */
 export interface ContextMetrics {
-  tokens_raw: number;
-  tokens_compacted: number;
-  reduction_pct: number;
+  tokens_before: number;
+  tokens_after: number;
+  saving_percent: number;
+  trace: string | Record<string, unknown>;
+  /** Proposed observational — from trace.duration_ms when available */
   latency_ms: number;
 }
 
 /**
  * Confirmed POST /context response (Appendix D).
+ * blast_radius / memory are Confirmed keys; MVP empty object or null (not arrays).
  * Citations / safe-edit plan: content inside final_context only (OQ-11 / OQ-Safe-Edit-Shape).
  */
 export interface ContextResponse {
   final_context: string;
   metrics: ContextMetrics;
-  blast_radius: unknown[];
-  memory: unknown[];
+  blast_radius: Record<string, unknown> | null;
+  memory: Record<string, unknown> | null;
   relevant_files: unknown[];
   is_real: boolean;
 }

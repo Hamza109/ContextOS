@@ -94,17 +94,28 @@ function assertContextResponse(value: unknown): ContextResponse {
   if (typeof v.is_real !== "boolean") {
     throw new ContextClientError("Invalid ContextResponse: missing is_real boolean");
   }
-  if (!Array.isArray(v.blast_radius) || !Array.isArray(v.memory) || !Array.isArray(v.relevant_files)) {
-    throw new ContextClientError("Invalid ContextResponse: array fields required");
+  if (!Array.isArray(v.relevant_files)) {
+    throw new ContextClientError("Invalid ContextResponse: relevant_files must be an array");
+  }
+  // Confirmed keys; MVP empty object or null (api-contract §2.3) — not arrays
+  if (v.blast_radius != null && !isPlainObject(v.blast_radius)) {
+    throw new ContextClientError("Invalid ContextResponse: blast_radius must be object or null");
+  }
+  if (v.memory != null && !isPlainObject(v.memory)) {
+    throw new ContextClientError("Invalid ContextResponse: memory must be object or null");
   }
   return {
     final_context: v.final_context,
     metrics: assertMetrics(v.metrics),
-    blast_radius: v.blast_radius,
-    memory: v.memory,
+    blast_radius: (v.blast_radius as Record<string, unknown> | null) ?? null,
+    memory: (v.memory as Record<string, unknown> | null) ?? null,
     relevant_files: v.relevant_files,
     is_real: v.is_real,
   };
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
 function assertMetrics(value: unknown): ContextMetrics {
@@ -112,17 +123,32 @@ function assertMetrics(value: unknown): ContextMetrics {
     throw new ContextClientError("Invalid ContextResponse: metrics object required");
   }
   const m = value as Record<string, unknown>;
-  for (const key of ["tokens_raw", "tokens_compacted", "reduction_pct", "latency_ms"] as const) {
+  for (const key of ["tokens_before", "tokens_after", "saving_percent"] as const) {
     if (typeof m[key] !== "number") {
       throw new ContextClientError(`Invalid ContextMetrics: missing numeric ${key}`);
     }
   }
+  if (typeof m.trace !== "string" && !isPlainObject(m.trace)) {
+    throw new ContextClientError("Invalid ContextMetrics: trace must be string or object");
+  }
+  const latencyMs = extractLatencyMs(m.trace);
   return {
-    tokens_raw: m.tokens_raw as number,
-    tokens_compacted: m.tokens_compacted as number,
-    reduction_pct: m.reduction_pct as number,
-    latency_ms: m.latency_ms as number,
+    tokens_before: m.tokens_before as number,
+    tokens_after: m.tokens_after as number,
+    saving_percent: m.saving_percent as number,
+    trace: m.trace as string | Record<string, unknown>,
+    latency_ms: latencyMs,
   };
+}
+
+function extractLatencyMs(trace: unknown): number {
+  if (trace && typeof trace === "object" && !Array.isArray(trace)) {
+    const d = (trace as Record<string, unknown>).duration_ms;
+    if (typeof d === "number" && Number.isFinite(d)) {
+      return d;
+    }
+  }
+  return 0;
 }
 
 function isAbortError(err: unknown): boolean {

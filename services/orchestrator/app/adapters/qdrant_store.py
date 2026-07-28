@@ -168,8 +168,8 @@ class QdrantStore:
             # Proposed soft bias: prefer exact file when provided; still allow repo-wide
             # by running exact-file filter first, then falling back to repo-wide.
             try:
-                exact = client.search(
-                    collection_name=self.settings.qdrant_collection,
+                exact = self._query_points(
+                    client,
                     query_vector=query_vector,
                     query_filter=qm.Filter(
                         must=must
@@ -180,19 +180,17 @@ class QdrantStore:
                         ]
                     ),
                     limit=max(1, min(limit, 10)),
-                    with_payload=True,
                 )
             except Exception:  # noqa: BLE001
                 exact = []
         else:
             exact = []
 
-        results = client.search(
-            collection_name=self.settings.qdrant_collection,
+        results = self._query_points(
+            client,
             query_vector=query_vector,
             query_filter=qm.Filter(must=must),
             limit=limit,
-            with_payload=True,
         )
 
         # Merge exact-file hits first (Proposed bias), then repo-wide
@@ -219,6 +217,36 @@ class QdrantStore:
             if len(out) >= limit:
                 break
         return out
+
+    def _query_points(
+        self,
+        client: Any,
+        *,
+        query_vector: list[float],
+        query_filter: Any,
+        limit: int,
+    ) -> list[Any]:
+        """Query points across supported qdrant-client API versions.
+
+        `search()` was removed from current qdrant-client releases in favor of
+        `query_points()`. Keep the older call for the project's declared
+        >=1.12 compatibility, and normalize the newer QueryResponse to points.
+        """
+        kwargs = {
+            "collection_name": self.settings.qdrant_collection,
+            "query_filter": query_filter,
+            "limit": limit,
+            "with_payload": True,
+        }
+        search = getattr(client, "search", None)
+        if callable(search):
+            return list(search(query_vector=query_vector, **kwargs))
+
+        query_points = getattr(client, "query_points", None)
+        if not callable(query_points):
+            raise AttributeError("Qdrant client has neither search() nor query_points()")
+        response = query_points(query=query_vector, **kwargs)
+        return list(response.points)
 
     def health(self) -> str:
         try:
