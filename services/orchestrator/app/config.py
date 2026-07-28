@@ -40,7 +40,7 @@ class Settings(BaseSettings):
         description="Proposed graph-name prefix used for repository isolation",
     )
     falkordb_timeout_seconds: float = Field(
-        default=5.0,
+        default=30.0,
         gt=0,
         description="Proposed FalkorDB socket/connect timeout",
     )

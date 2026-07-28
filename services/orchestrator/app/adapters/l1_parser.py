@@ -2,18 +2,29 @@
 
 The adapter receives policy-approved files only. Source bytes are used transiently
 for parsing and are never included in returned graph records.
+
+Native grammar crashes (SIGSEGV/SIGBUS) are isolated in a worker subprocess so one
+poison file cannot take down the FastAPI worker. Crashing files fall back to
+import-only extraction and count as malformed.
 """
 
 from __future__ import annotations
 
 import hashlib
+import logging
+import os
+import pickle
 import posixpath
 import re
+import subprocess
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol
 
 from tree_sitter_language_pack import get_parser
+
+logger = logging.getLogger(__name__)
 
 SUPPORTED_LANGUAGES = {
     ".py": "python",
@@ -119,7 +130,29 @@ def deterministic_entity_id(
 class TreeSitterL1Parser:
     """Extract normalized File/Module/Class/Method/Call nodes and typed edges."""
 
+    def __init__(self, *, isolate_crashes: bool | None = None) -> None:
+        if isolate_crashes is None:
+            isolate_crashes = _isolation_enabled()
+        self.isolate_crashes = isolate_crashes
+
     def parse_paths(
+        self, repo: str, root: Path, paths: list[Path], index_revision: str
+    ) -> ParseResult:
+        if self.isolate_crashes:
+            result = _parse_paths_crash_isolated(repo, root, paths, index_revision)
+        else:
+            result = self._parse_paths_inprocess(repo, root, paths, index_revision)
+        result.nodes = list({node.entity_id: node for node in result.nodes}.values())
+        result.edges = list(
+            {
+                (edge.source_id, edge.target_id, edge.edge_kind): edge
+                for edge in result.edges
+            }.values()
+        )
+        _add_resolved_file_imports(result)
+        return result
+
+    def _parse_paths_inprocess(
         self, repo: str, root: Path, paths: list[Path], index_revision: str
     ) -> ParseResult:
         result = ParseResult()
@@ -133,14 +166,7 @@ class TreeSitterL1Parser:
             result.edges.extend(parsed.edges)
             result.parsed_files += parsed.parsed_files
             result.malformed_files += parsed.malformed_files
-        result.nodes = list({node.entity_id: node for node in result.nodes}.values())
-        result.edges = list(
-            {
-                (edge.source_id, edge.target_id, edge.edge_kind): edge
-                for edge in result.edges
-            }.values()
-        )
-        _add_resolved_file_imports(result)
+            result.unsupported_files += parsed.unsupported_files
         return result
 
     def _parse_file(
@@ -152,15 +178,8 @@ class TreeSitterL1Parser:
         revision: str,
     ) -> ParseResult:
         source = path.read_bytes()
-        rel = path.resolve().relative_to(root.resolve()).as_posix()
-        lines = max(1, source.count(b"\n") + 1)
-        file_node = _node(repo, rel, "File", rel, 1, lines, revision)
-        module_name = _module_name(rel)
-        module_node = _node(repo, rel, "Module", module_name, 1, lines, revision)
-        result = ParseResult(
-            nodes=[file_node, module_node],
-            edges=[_edge(file_node, module_node, "CONTAINS")],
-            parsed_files=1,
+        result, module_node, module_name = _scaffold_file_result(
+            repo, root, path, revision, source
         )
 
         try:
@@ -283,6 +302,124 @@ class TreeSitterL1Parser:
             )
             result.nodes.append(target)
             result.edges.append(_edge(module_node, target, "IMPORTS"))
+
+
+def _isolation_enabled() -> bool:
+    raw = os.environ.get("CONTEXTOS_L1_ISOLATE_CRASHES", "1").strip().lower()
+    return raw not in {"0", "false", "no", "off"}
+
+
+def _scaffold_file_result(
+    repo: str, root: Path, path: Path, revision: str, source: bytes
+) -> tuple[ParseResult, StructuralNode, str]:
+    rel = path.resolve().relative_to(root.resolve()).as_posix()
+    lines = max(1, source.count(b"\n") + 1)
+    file_node = _node(repo, rel, "File", rel, 1, lines, revision)
+    module_name = _module_name(rel)
+    module_node = _node(repo, rel, "Module", module_name, 1, lines, revision)
+    result = ParseResult(
+        nodes=[file_node, module_node],
+        edges=[_edge(file_node, module_node, "CONTAINS")],
+        parsed_files=1,
+    )
+    return result, module_node, module_name
+
+
+def _import_only_fallback(
+    repo: str, root: Path, path: Path, revision: str
+) -> ParseResult:
+    """Parent-side fallback when a native grammar crash kills the worker."""
+    source = path.read_bytes()
+    result, module_node, _module_name = _scaffold_file_result(
+        repo, root, path, revision, source
+    )
+    result.malformed_files = 1
+    TreeSitterL1Parser(isolate_crashes=False)._fallback_imports(
+        source, result, module_node
+    )
+    logger.warning(
+        "L1 tree-sitter worker crashed; using import-only fallback path=%s",
+        path.resolve().relative_to(root.resolve()).as_posix(),
+    )
+    return result
+
+
+def _try_parse_in_subprocess(
+    repo: str, root: Path, paths: list[Path], revision: str
+) -> ParseResult | None:
+    """Return parse result, or None if the worker exited abnormally (e.g. SIGSEGV)."""
+    if not paths:
+        return ParseResult()
+    payload = (repo, str(root), [str(p) for p in paths], revision)
+    try:
+        completed = subprocess.run(
+            [sys.executable, "-m", "app.adapters.l1_parse_worker"],
+            input=pickle.dumps(payload, protocol=pickle.HIGHEST_PROTOCOL),
+            capture_output=True,
+            timeout=max(60.0, 2.0 * len(paths)),
+            check=False,
+        )
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        logger.warning("L1 parse worker failed to run: %s", exc)
+        return None
+    if completed.returncode != 0:
+        return None
+    if not completed.stdout:
+        return None
+    try:
+        value = pickle.loads(completed.stdout)
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("L1 parse worker returned unreadable payload: %s", exc)
+        return None
+    if not isinstance(value, ParseResult):
+        return None
+    return value
+
+
+def _parse_paths_crash_isolated(
+    repo: str, root: Path, paths: list[Path], revision: str
+) -> ParseResult:
+    """Binary-split batches so poison files become import-only fallbacks."""
+    if not paths:
+        return ParseResult()
+
+    unsupported = ParseResult()
+    supported: list[Path] = []
+    for path in paths:
+        if SUPPORTED_LANGUAGES.get(path.suffix.lower()) is None:
+            unsupported.unsupported_files += 1
+        else:
+            supported.append(path)
+
+    parsed = _parse_supported_resilient(repo, root, supported, revision)
+    return _merge_parse_results(unsupported, parsed)
+
+
+def _parse_supported_resilient(
+    repo: str, root: Path, paths: list[Path], revision: str
+) -> ParseResult:
+    if not paths:
+        return ParseResult()
+    batch = _try_parse_in_subprocess(repo, root, paths, revision)
+    if batch is not None:
+        return batch
+    if len(paths) == 1:
+        return _import_only_fallback(repo, root, paths[0], revision)
+    mid = len(paths) // 2
+    left = _parse_supported_resilient(repo, root, paths[:mid], revision)
+    right = _parse_supported_resilient(repo, root, paths[mid:], revision)
+    return _merge_parse_results(left, right)
+
+
+def _merge_parse_results(*parts: ParseResult) -> ParseResult:
+    merged = ParseResult()
+    for part in parts:
+        merged.nodes.extend(part.nodes)
+        merged.edges.extend(part.edges)
+        merged.parsed_files += part.parsed_files
+        merged.unsupported_files += part.unsupported_files
+        merged.malformed_files += part.malformed_files
+    return merged
 
 
 def _node(

@@ -101,7 +101,10 @@ class HashEmbedder:
 
 
 def get_embedder(settings: Settings | None = None, *, stub: bool = False) -> EmbeddingBackend:
+    import os
+
     cfg = settings or get_settings()
-    if stub:
+    env_stub = os.environ.get("CONTEXTOS_EMBEDDING_STUB", "").lower() in {"1", "true", "yes"}
+    if stub or env_stub:
         return HashEmbedder(dim=cfg.embedding_dim)
     return LocalMiniLMEmbedder(model_name=cfg.embedding_model, dim=cfg.embedding_dim)

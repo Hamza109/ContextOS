@@ -32,6 +32,8 @@ HARD_EXCLUDE_DIR_NAMES: frozenset[str] = frozenset(
         "coverage",
         ".idea",
         ".vscode",
+        # Agent / analysis artifact caches (multi-MB dumps; not source of truth)
+        "graphify-out",
     }
 )
 

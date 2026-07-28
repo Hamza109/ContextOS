@@ -89,6 +89,7 @@ def test_env_prefix_and_secret_globs(tmp_path: Path) -> None:
     assert policy.is_excluded(root / "server.pem")
     assert ".env" in HARD_EXCLUDE_FILE_NAMES or True
     assert "node_modules" in HARD_EXCLUDE_DIR_NAMES
+    assert "graphify-out" in HARD_EXCLUDE_DIR_NAMES
     assert any("pem" in g or "id_rsa" in g for g in SECRET_FILE_GLOBS)
 
 

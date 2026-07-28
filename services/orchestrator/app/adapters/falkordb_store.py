@@ -13,6 +13,8 @@ from app.config import Settings
 
 NODE_LABELS = {"File", "Module", "Class", "Method", "Call"}
 EDGE_TYPES = {"CONTAINS", "DECLARES", "MAKES_CALL", "IMPORTS"}
+# Keep Cypher UNWIND payloads bounded so socket timeouts stay recoverable.
+_PERSIST_BATCH_SIZE = 250
 
 
 class GraphQuery(Protocol):
@@ -22,6 +24,14 @@ class GraphQuery(Protocol):
 @dataclass(frozen=True)
 class PersistResult:
     node_count: int
+
+
+def _batched(
+    rows: list[dict[str, Any]], size: int = _PERSIST_BATCH_SIZE
+) -> list[list[dict[str, Any]]]:
+    if not rows:
+        return []
+    return [rows[i : i + size] for i in range(0, len(rows), size)]
 
 
 class FalkorDBStore:
@@ -84,14 +94,13 @@ class FalkorDBStore:
 
         for label in NODE_LABELS:
             rows = [node.as_properties() for node in nodes if node.entity_kind == label]
-            if not rows:
-                continue
-            graph.query(
-                f"UNWIND $rows AS row "
-                f"MERGE (n:{label} {{repo: row.repo, entity_id: row.entity_id}}) "
-                "SET n = row",
-                {"rows": rows},
-            )
+            for batch in _batched(rows):
+                graph.query(
+                    f"UNWIND $rows AS row "
+                    f"MERGE (n:{label} {{repo: row.repo, entity_id: row.entity_id}}) "
+                    "SET n = row",
+                    {"rows": batch},
+                )
 
         for edge_type in EDGE_TYPES:
             rows = [
@@ -103,16 +112,16 @@ class FalkorDBStore:
                 for edge in edges
                 if edge.edge_kind == edge_type
             ]
-            if not rows:
-                continue
-            graph.query(
-                "UNWIND $rows AS row "
-                "MATCH (a {repo: row.repo, entity_id: row.source_id}) "
-                "MATCH (b {repo: row.repo, entity_id: row.target_id}) "
-                f"MERGE (a)-[r:{edge_type} {{repo: row.repo, source_path: row.source_path}}]->(b) "
-                "SET r.index_revision = row.index_revision",
-                {"rows": rows},
-            )
+            for batch in _batched(rows):
+                graph.query(
+                    "UNWIND $rows AS row "
+                    "MATCH (a {repo: row.repo, entity_id: row.source_id}) "
+                    "MATCH (b {repo: row.repo, entity_id: row.target_id}) "
+                    f"MERGE (a)-[r:{edge_type} "
+                    "{repo: row.repo, source_path: row.source_path}]->(b) "
+                    "SET r.index_revision = row.index_revision",
+                    {"rows": batch},
+                )
 
         graph.query(
             "MERGE (r:IndexRevision {repo: $repo}) "

@@ -51,6 +51,19 @@ def test_full_persist_deletes_stale_relationships_by_revision() -> None:
     )
 
 
+def test_falkor_persist_batches_large_node_payloads() -> None:
+    graph = CapturingGraph()
+    store = FalkorDBStore(Settings(), graph=graph, repo="repo")
+    nodes = [_node(f"file-{index}") for index in range(501)]
+
+    store.persist("repo", "r1", nodes, [])
+
+    node_batches = [
+        params["rows"] for query, params in graph.calls if "UNWIND $rows" in query
+    ]
+    assert [len(batch) for batch in node_batches] == [250, 250, 1]
+
+
 def test_in_memory_store_is_idempotent_and_reconciles_affected_paths() -> None:
     store = InMemoryFalkorStore()
     first = [_node("a", "a.py"), _node("b", "b.py")]

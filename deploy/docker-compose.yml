@@ -34,8 +34,12 @@ services:
       CONTEXTOS_QDRANT_URL: http://qdrant:6333
       CONTEXTOS_FALKORDB_URL: redis://falkordb:6379
       CONTEXTOS_FALKORDB_GRAPH_PREFIX: contextos
-      CONTEXTOS_FALKORDB_TIMEOUT_SECONDS: "5"
+      CONTEXTOS_FALKORDB_TIMEOUT_SECONDS: "30"
       CONTEXTOS_EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
+      # Local/dev escape hatch for hosts where torch/Metal native inference crashes.
+      CONTEXTOS_EMBEDDING_STUB: "${CONTEXTOS_EMBEDDING_STUB:-false}"
+      # Isolate tree-sitter native crashes so one poison file cannot kill the API.
+      CONTEXTOS_L1_ISOLATE_CRASHES: "${CONTEXTOS_L1_ISOLATE_CRASHES:-true}"
       # Proposed: local inference hook (Ollama) — query-time only, not indexing
       CONTEXTOS_LOCAL_INFERENCE_URL: http://host.docker.internal:11434
       CONTEXTOS_PACK_CACHE_DIR: /var/contextos/packs
