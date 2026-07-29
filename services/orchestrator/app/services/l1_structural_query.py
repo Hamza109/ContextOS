@@ -1,4 +1,11 @@
-"""Local structural-intent matching and cited L1 evidence composition."""
+"""Local structural-intent matching and cited L1 evidence composition.
+
+EP-007: blast-intent queries no longer permanently short-circuit as
+``blast_declined`` without allowing ``POST /context`` to populate
+``blast_radius``. Status ``blast_intent`` signals context.py to attach blast
+via ``l1_blast`` (final_context left unchanged for blast asks). Non-blast L1
+location/ownership enrichment is unchanged.
+"""
 
 from __future__ import annotations
 
@@ -43,7 +50,19 @@ _STOP_WORDS = {
     "for",
     "from",
     "with",
+    "blast",
+    "radius",
+    "breaks",
+    "affected",
+    "impact",
+    "changing",
 }
+
+
+def is_blast_intent(query: str) -> bool:
+    """True when query matches EP-006/007 blast hint phrases."""
+    lowered = (query or "").casefold()
+    return any(hint in lowered for hint in _BLAST_HINTS)
 
 
 @dataclass(frozen=True)
@@ -77,8 +96,9 @@ class StructuralQueryService:
     def enrich(self, final_context: str, *, repo: str, query: str) -> StructuralEnrichment:
         started = time.perf_counter()
         lowered = query.casefold()
-        if any(hint in lowered for hint in _BLAST_HINTS):
-            return self._result(final_context, "blast_declined", False, 0, started)
+        if is_blast_intent(query):
+            # EP-007: do not permanently decline — context.py populates blast_radius.
+            return self._result(final_context, "blast_intent", False, 0, started)
         if not any(hint in lowered for hint in _STRUCTURAL_HINTS):
             return self._result(final_context, "unsupported", False, 0, started)
 

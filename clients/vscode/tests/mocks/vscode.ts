@@ -43,7 +43,21 @@ export class Hover {
 
 export const Uri = {
   file: (fsPath: string) => ({ fsPath, scheme: "file" }),
+  joinPath: (base: { fsPath?: string; path?: string }, ...parts: string[]) => {
+    const root = base.fsPath ?? base.path ?? "";
+    return { fsPath: [root, ...parts].join("/"), scheme: "file" };
+  },
 };
+
+export const ViewColumn = {
+  Beside: 2,
+  One: 1,
+} as const;
+
+export const StatusBarAlignment = {
+  Left: 1,
+  Right: 2,
+} as const;
 
 export const window = {
   activeTextEditor: undefined as
@@ -62,6 +76,7 @@ export const window = {
   showInformationMessage: async (_m: string) => undefined,
   showWarningMessage: async (_m: string) => undefined,
   showErrorMessage: async (_m: string) => undefined,
+  showInputBox: async (_opts?: unknown): Promise<string | undefined> => undefined,
   showQuickPick: async <T>(_items: T[], _opts?: unknown): Promise<T | T[] | undefined> =>
     undefined,
   showTextDocument: async (_doc: unknown) => ({
@@ -73,6 +88,41 @@ export const window = {
     show: (_preserveFocus?: boolean) => undefined,
     dispose: () => undefined,
   }),
+  createStatusBarItem: (_alignment?: number, _priority?: number) => ({
+    text: "",
+    tooltip: "",
+    command: undefined as string | undefined,
+    show: () => undefined,
+    hide: () => undefined,
+    dispose: () => undefined,
+  }),
+  createWebviewPanel: (
+    _viewType: string,
+    _title: string,
+    _showOptions: unknown,
+    _options?: unknown,
+  ) => {
+    const messages: unknown[] = [];
+    const panel = {
+      reveal: (_column?: unknown) => undefined,
+      onDidDispose: (_listener: () => void) => ({ dispose() {} }),
+      webview: {
+        html: "",
+        cspSource: "vscode-webview://test",
+        postMessage: async (msg: unknown) => {
+          messages.push(msg);
+          return true;
+        },
+        onDidReceiveMessage: (_listener: (msg: unknown) => void) => ({ dispose() {} }),
+        asWebviewUri: (uri: { fsPath: string }) => ({
+          toString: () => `webview://${uri.fsPath}`,
+        }),
+      },
+      dispose: () => undefined,
+      _messages: messages,
+    };
+    return panel;
+  },
   withProgress: async <T>(
     _options: unknown,
     task: (
@@ -123,7 +173,12 @@ export const languages = {
 
 export type ExtensionContext = {
   subscriptions: { dispose(): void }[];
+  extensionUri: { fsPath: string; scheme: string };
 };
 
 export type TextEditor = NonNullable<typeof window.activeTextEditor>;
 export type WorkspaceFolder = { uri: { fsPath: string }; name: string };
+export type StatusBarItem = ReturnType<typeof window.createStatusBarItem>;
+export type WebviewPanel = ReturnType<typeof window.createWebviewPanel>;
+export type TextDocument = { uri: { fsPath: string }; getText: () => string };
+export type Uri = { fsPath: string; scheme: string };

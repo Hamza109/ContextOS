@@ -19,6 +19,10 @@ def _clear_settings_cache(monkeypatch):
     from app.services.l1_entity_cache import get_l1_entity_cache
 
     get_l1_entity_cache.cache_clear()
+    from app.adapters.falkordb_store import reset_memory_graph_store
+
+    reset_memory_graph_store()
     yield
     get_l1_entity_cache.cache_clear()
+    reset_memory_graph_store()
     get_settings.cache_clear()

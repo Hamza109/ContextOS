@@ -108,6 +108,44 @@ def test_parser_resolves_python_relative_import_to_sibling_file(tmp_path: Path) 
     assert nodes[file_imports[0].target_id].source_path == "pkg/tokens.py"
 
 
+def test_parser_resolves_typescript_relative_path_imports(tmp_path: Path) -> None:
+    src_dir = tmp_path / "apps" / "api" / "src"
+    auth_dir = src_dir / "modules" / "auth"
+    auth_dir.mkdir(parents=True)
+    app = src_dir / "app.module.ts"
+    auth = auth_dir / "auth.module.ts"
+    app.write_text(
+        "import { AuthModule } from './modules/auth/auth.module';\n",
+        encoding="utf-8",
+    )
+    auth.write_text(
+        "import { AuthService } from './auth.service';\nexport class AuthModule {}\n",
+        encoding="utf-8",
+    )
+    service = auth_dir / "auth.service.ts"
+    service.write_text("export class AuthService {}\n", encoding="utf-8")
+
+    result = _parser().parse_paths(
+        "fixture", tmp_path, [app, auth, service], "rev"
+    )
+    nodes = {node.entity_id: node for node in result.nodes}
+    file_imports = {
+        (nodes[e.source_id].source_path, nodes[e.target_id].source_path)
+        for e in result.edges
+        if e.edge_kind == "IMPORTS"
+        and nodes[e.source_id].entity_kind == "File"
+        and nodes[e.target_id].entity_kind == "File"
+    }
+    assert (
+        "apps/api/src/app.module.ts",
+        "apps/api/src/modules/auth/auth.module.ts",
+    ) in file_imports
+    assert (
+        "apps/api/src/modules/auth/auth.module.ts",
+        "apps/api/src/modules/auth/auth.service.ts",
+    ) in file_imports
+
+
 def test_crash_isolation_falls_back_for_poison_file(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

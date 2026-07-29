@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-from app.adapters.falkordb_store import FalkorDBStore, InMemoryFalkorStore, PersistResult
+from app.adapters.falkordb_store import PersistResult, get_graph_store
 from app.adapters.l1_parser import L1Parser, ParseResult, StructuralNode, TreeSitterL1Parser
 from app.config import Settings
 from app.services.l1_entity_cache import L1EntityCache, get_l1_entity_cache
@@ -55,11 +55,8 @@ class L1GraphService:
         cache: L1EntityCache | None = None,
     ) -> None:
         self.parser = parser if parser is not None else TreeSitterL1Parser()
-        self.store = store if store is not None else (
-            InMemoryFalkorStore()
-            if settings.falkordb_url.startswith("memory://")
-            else FalkorDBStore(settings)
-        )
+        # Shared memory:// store so index → blast/graph share revision evidence.
+        self.store = store if store is not None else get_graph_store(settings)
         self.cache = cache if cache is not None else get_l1_entity_cache()
 
     def generate(

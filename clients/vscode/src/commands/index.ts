@@ -22,4 +22,8 @@ export {
   ASK_ERROR_HTTP,
   ASK_LATENCY_LOG_PREFIX,
 } from "./askContext";
+export {
+  SHOW_BLAST_GRAPH_COMMAND,
+  runShowBlastGraph,
+} from "./showBlastGraph";
 export { snapshotActiveEditor, toSymbolPosition } from "./editorContext";

@@ -18,6 +18,8 @@ const baseConfig: ExtensionConfig = {
   autoIndexOnActivate: true,
   reindexOnSave: true,
   indexTimeoutMs: 60_000,
+  enableGraphBlastPanel: true,
+  showStalenessWarnings: true,
 };
 
 function makeEditor(selectionText: string) {

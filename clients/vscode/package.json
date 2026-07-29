@@ -1,7 +1,7 @@
 {
   "name": "contextos",
   "displayName": "ContextOS",
-  "description": "ContextOS L5 indexing + L3 symbol DX — triggers FastAPI; policy stays server-side.",
+  "description": "ContextOS L5 indexing + L3 symbol DX + L1 blast graph — triggers FastAPI; policy stays server-side.",
   "version": "0.1.0",
   "publisher": "contextos",
   "engines": {
@@ -37,6 +37,10 @@
       {
         "command": "contextos.askContext",
         "title": "ContextOS: Ask ContextOS"
+      },
+      {
+        "command": "contextos.showBlastGraph",
+        "title": "ContextOS: Show Blast Graph"
       }
     ],
     "keybindings": [
@@ -57,6 +61,11 @@
         {
           "command": "contextos.packContext",
           "group": "contextos@1",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "contextos.showBlastGraph",
+          "group": "contextos@1a",
           "when": "editorTextFocus"
         },
         {
@@ -99,20 +108,39 @@
           "default": 600000,
           "minimum": 1000,
           "description": "Proposed: client-side AbortSignal timeout for POST /index (ms)."
+        },
+        "contextos.enableGraphBlastPanel": {
+          "type": "boolean",
+          "default": true,
+          "description": "Proposed: enable ContextOS React Flow blast/graph Webview panel (EP-007 US-020)."
+        },
+        "contextos.showStalenessWarnings": {
+          "type": "boolean",
+          "default": true,
+          "description": "Proposed: show staleness badge/warnings when freshness metadata indicates drift (EP-007 US-027). Numeric threshold remains NEEDS CLARIFICATION."
         }
       }
     }
   },
   "scripts": {
-    "compile": "tsc -p ./",
+    "build:webview": "node scripts/build-webview.mjs",
+    "compile": "npm run build:webview && tsc -p ./",
     "watch": "tsc -watch -p ./",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc -p ./ --noEmit"
   },
+  "dependencies": {
+    "@xyflow/react": "^12.6.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
   "devDependencies": {
     "@types/node": "^20.11.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
     "@types/vscode": "^1.85.0",
+    "esbuild": "^0.25.0",
     "typescript": "^5.3.3",
     "vitest": "^1.6.0"
   }

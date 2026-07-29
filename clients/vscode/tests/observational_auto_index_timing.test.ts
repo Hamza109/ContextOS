@@ -33,6 +33,8 @@ describe("observational_auto_index_timing (T057)", () => {
           autoIndexOnActivate: true,
           reindexOnSave: true,
           indexTimeoutMs: 60_000,
+          enableGraphBlastPanel: true,
+          showStalenessWarnings: true,
         } satisfies ExtensionConfig,
         workspaceFolders: [{ uri: { fsPath: "/tmp/big" }, name: "big" }],
         progressHost: createTestProgressHost(),

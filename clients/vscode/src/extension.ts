@@ -1,9 +1,10 @@
 /**
- * ContextOS VS Code extension entry (EP-001 indexing + EP-003 L3 DX).
+ * ContextOS VS Code extension entry (EP-001 indexing + EP-003 L3 DX + EP-007 blast).
  *
  * Owns DX only: activation auto-index, progress, client cancel, save re-index,
- * Serena MCP hover/commands, Pack Context + Ask ContextOS → POST /context.
- * FastAPI owns pack / ignore / consent / embed / Qdrant / symbol policy —
+ * Serena MCP hover/commands, Pack Context + Ask ContextOS → POST /context,
+ * React Flow blast panel → GET /blast (no client blast computation).
+ * FastAPI owns pack / ignore / consent / embed / Qdrant / symbol / blast policy —
  * never reimplemented here.
  */
 
@@ -16,27 +17,38 @@ import { runWithIndexProgress, type IndexProgressHost } from "./indexing/progres
 import { resolvePrimaryWorkspace } from "./indexing/workspace";
 import { SerenaMcpClient } from "./mcp/serenaClient";
 import { createSerenaHoverProvider } from "./providers/hoverProvider";
+import { FreshnessSession } from "./providers/stalenessPresenter";
 import {
   ASK_CONTEXT_COMMAND,
   DEFINITION_LOOKUP_COMMAND,
   FIND_REFERENCES_COMMAND,
   PACK_CONTEXT_COMMAND,
   RENAME_SCOPE_COMMAND,
+  SHOW_BLAST_GRAPH_COMMAND,
   runAskContext,
   runDefinitionLookup,
   runFindReferences,
   runPackContext,
   runRenameScopeAnalysis,
+  runShowBlastGraph,
 } from "./commands";
 
 let indexingInFlight = false;
 let outputChannel: vscode.OutputChannel | undefined;
 let serenaClient: SerenaMcpClient | undefined;
+const freshnessSession = new FreshnessSession();
 
 export function activate(context: vscode.ExtensionContext): void {
   const progressHost = createProgressHost();
   outputChannel = vscode.window.createOutputChannel("ContextOS");
   context.subscriptions.push(outputChannel);
+
+  const staleStatusBar = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Left,
+    50,
+  );
+  staleStatusBar.command = SHOW_BLAST_GRAPH_COMMAND;
+  context.subscriptions.push(staleStatusBar);
 
   // Proposed: injectable MCP session not supplied at activate — unavailable until host wires live Serena.
   // Tests inject via createSerenaClientForTests. Clear IDE error on command use (T070).
@@ -92,6 +104,8 @@ export function activate(context: vscode.ExtensionContext): void {
             );
           },
         );
+        // US-027: after index, clear baseline so next blast refresh can re-adopt fresh revision.
+        freshnessSession.markIndexed();
         showInfo(
           `ContextOS: indexed ${response.files_indexed} files (${response.embeddings} embeddings)`,
         );
@@ -218,6 +232,22 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   );
 
+  // --- EP-007 US-020 React Flow blast panel ---
+  context.subscriptions.push(
+    vscode.commands.registerCommand(SHOW_BLAST_GRAPH_COMMAND, async () => {
+      await runShowBlastGraph({
+        extensionUri: context.extensionUri,
+        getConfig,
+        getEditor: () => vscode.window.activeTextEditor,
+        workspaceFolders: () => vscode.workspace.workspaceFolders,
+        showWarningMessage: showWarn,
+        showErrorMessage: showError,
+        freshnessSession,
+        statusBarItem: staleStatusBar,
+      });
+    }),
+  );
+
   context.subscriptions.push(
     vscode.languages.registerHoverProvider(
       { scheme: "file" },
@@ -275,6 +305,11 @@ export function deactivate(): void {
 /** Test hook: replace MCP client (Proposed — not a product API). */
 export function setSerenaClientForTests(client: SerenaMcpClient | undefined): void {
   serenaClient = client;
+}
+
+/** Test hook: freshness session (Proposed — EP-007 US-027). */
+export function getFreshnessSessionForTests(): FreshnessSession {
+  return freshnessSession;
 }
 
 function createProgressHost(): IndexProgressHost {

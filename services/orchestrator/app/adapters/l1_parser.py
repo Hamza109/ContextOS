@@ -489,6 +489,9 @@ def _module_name(path: str) -> str:
     return no_suffix.replace("/", ".")
 
 
+_JS_TS_SUFFIXES = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs")
+
+
 def _add_resolved_file_imports(result: ParseResult) -> None:
     """Add Confirmed File→File IMPORTS edges when a local target can be resolved."""
     nodes_by_id = {node.entity_id: node for node in result.nodes}
@@ -502,6 +505,7 @@ def _add_resolved_file_imports(result: ParseResult) -> None:
         and node.source_path in files_by_path
         and node.qualified_name == _module_name(node.source_path)
     }
+    known_paths = set(files_by_path)
     resolved: list[StructuralEdge] = []
     for edge in result.edges:
         if edge.edge_kind != "IMPORTS":
@@ -511,17 +515,16 @@ def _add_resolved_file_imports(result: ParseResult) -> None:
         if source is None or target is None:
             continue
         source_file = files_by_path.get(source.source_path)
-        target_file = next(
-            (
-                files_by_module[candidate]
-                for candidate in _import_module_candidates(
-                    source.source_path, target.qualified_name
-                )
-                if candidate in files_by_module
-            ),
-            None,
+        if source_file is None:
+            continue
+        target_file = _resolve_import_to_file(
+            source.source_path,
+            target.qualified_name,
+            files_by_path=files_by_path,
+            files_by_module=files_by_module,
+            known_paths=known_paths,
         )
-        if source_file is not None and target_file is not None:
+        if target_file is not None:
             resolved.append(_edge(source_file, target_file, "IMPORTS"))
     result.edges.extend(resolved)
     result.edges = list(
@@ -532,11 +535,81 @@ def _add_resolved_file_imports(result: ParseResult) -> None:
     )
 
 
+def _resolve_import_to_file(
+    source_path: str,
+    imported: str,
+    *,
+    files_by_path: dict[str, StructuralNode],
+    files_by_module: dict[str, StructuralNode],
+    known_paths: set[str],
+) -> StructuralNode | None:
+    """Resolve Python-style modules or JS/TS relative paths to a File node."""
+    path_hit = _resolve_relative_filesystem_path(source_path, imported, known_paths)
+    if path_hit is not None:
+        return files_by_path.get(path_hit)
+    for candidate in _import_module_candidates(source_path, imported):
+        hit = files_by_module.get(candidate)
+        if hit is not None:
+            return hit
+    return None
+
+
+def _resolve_relative_filesystem_path(
+    source_path: str, imported: str, known_paths: set[str]
+) -> str | None:
+    """Map `./foo` / `../bar` imports onto indexed file paths (JS/TS + similar)."""
+    raw = imported.strip().replace("\\", "/")
+    if not raw.startswith("."):
+        return None
+    # Python dotted relatives (`.tokens`, `..pkg.mod`) — not filesystem paths.
+    if not (raw.startswith("./") or raw.startswith("../") or "/" in raw):
+        return None
+    base = posixpath.dirname(source_path.replace("\\", "/"))
+    joined = posixpath.normpath(posixpath.join(base, raw))
+    if joined.startswith("../") or joined == "..":
+        return None
+    for candidate in _filesystem_import_path_candidates(joined):
+        if candidate in known_paths:
+            return candidate
+    return None
+
+
+def _filesystem_import_path_candidates(joined: str) -> list[str]:
+    path = joined.replace("\\", "/")
+    while path.startswith("./"):
+        path = path[2:]
+    out: list[str] = []
+    seen: set[str] = set()
+
+    def add(item: str) -> None:
+        if item and item not in seen:
+            seen.add(item)
+            out.append(item)
+
+    add(path)
+    lower = path.lower()
+    if any(lower.endswith(suffix) for suffix in _JS_TS_SUFFIXES):
+        return out
+    for suffix in _JS_TS_SUFFIXES:
+        add(f"{path}{suffix}")
+    for suffix in _JS_TS_SUFFIXES:
+        add(f"{path}/index{suffix}")
+    return out
+
+
 def _import_module_candidates(source_path: str, imported: str) -> list[str]:
     raw = imported.strip().replace("\\", "/")
     candidates = [raw.replace("/", ".").strip(".")]
     if raw.startswith("."):
-        candidates.insert(0, _python_relative_import_candidate(source_path, raw))
+        # JS/TS path-style relative → module name after filesystem-style join.
+        if "/" in raw or raw.startswith("./") or raw.startswith("../"):
+            base = posixpath.dirname(source_path.replace("\\", "/"))
+            joined = posixpath.normpath(posixpath.join(base, raw))
+            if not joined.startswith("../") and joined != "..":
+                for path in _filesystem_import_path_candidates(joined):
+                    candidates.append(_module_name(path))
+        else:
+            candidates.insert(0, _python_relative_import_candidate(source_path, raw))
     return [candidate for candidate in candidates if candidate]
 
 

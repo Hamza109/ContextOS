@@ -5,6 +5,17 @@
  */
 
 import type { ContextResponse } from "../api/types";
+import {
+  evaluateStaleness,
+  extractFreshnessSignal,
+  formatStalenessBanner,
+} from "./stalenessPresenter";
+
+export interface AskReportOptions {
+  /** Proposed US-027: surface staleness on search/Ask DX when flag set */
+  showStalenessWarnings?: boolean;
+  baselineRevision?: string | null;
+}
 
 /** Format relevant_files array for human-readable Ask report (Proposed layout). */
 export function formatRelevantFiles(relevantFiles: unknown[]): string {
@@ -36,20 +47,32 @@ export function formatRelevantFiles(relevantFiles: unknown[]): string {
 /**
  * Present Ask results from Confirmed ContextResponse fields only.
  * Does not pack, filter, or enrich beyond display formatting.
+ * Proposed: append staleness banner when blast_radius freshness indicates drift.
  */
-export function formatAskContextReport(response: ContextResponse): string {
+export function formatAskContextReport(
+  response: ContextResponse,
+  opts: AskReportOptions = {},
+): string {
   const m = response.metrics;
-  const header = [
+  const staleState = evaluateStaleness(
+    extractFreshnessSignal(response.blast_radius, opts.baselineRevision),
+    { showStalenessWarnings: opts.showStalenessWarnings ?? true },
+  );
+  const banner = formatStalenessBanner(staleState);
+  const headerLines = [
     "ContextOS Ask (via POST /context)",
     `tokens_before=${m.tokens_before} tokens_after=${m.tokens_after} ` +
       `saving_percent=${m.saving_percent} latency_ms=${m.latency_ms}`,
     `is_real=${response.is_real}`,
-    "",
-  ].join("\n");
+  ];
+  if (banner) {
+    headerLines.push(banner);
+  }
+  headerLines.push("");
 
   const files = formatRelevantFiles(response.relevant_files);
   return (
-    `${header}${response.final_context}\n\n` +
+    `${headerLines.join("\n")}${response.final_context}\n\n` +
     `--- relevant_files ---\n${files}`
   );
 }

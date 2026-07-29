@@ -12,6 +12,8 @@ const baseConfig: ExtensionConfig = {
   autoIndexOnActivate: true,
   reindexOnSave: true,
   indexTimeoutMs: 60_000,
+  enableGraphBlastPanel: true,
+  showStalenessWarnings: true,
 };
 
 describe("save_incremental_reindex (T060)", () => {

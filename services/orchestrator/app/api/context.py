@@ -7,11 +7,15 @@ RBAC hook reserved — OQ-01 Missing Evidence (do not invent roles).
 EP-003 Proposed: optional Serena-informed safe edit plan appended inside Confirmed
 ``final_context`` string only (OQ-Safe-Edit-Shape) — no new Appendix D response fields.
 No Confirmed L3 symbol REST (OQ-Symbol-REST; MCP-first Option A).
+
+EP-007: when blast intent applies, populate existing Confirmed ``blast_radius``
+from L1 blast service (no new response fields). Non-blast L1 enrichment unchanged.
 """
 
 from __future__ import annotations
 
 import logging
+import re
 import time
 from typing import Any
 
@@ -22,12 +26,14 @@ from app.adapters.qdrant_store import QdrantStore
 from app.adapters.serena_mcp import InMemorySerenaDouble, SerenaMCPAdapter, SerenaMCPConfig
 from app.api.schemas_context import ContextMetrics, ContextRequest, ContextResponse
 from app.config import get_settings
-from app.services.l1_structural_query import StructuralQueryService
+from app.services.l1_blast import BlastNotFoundError, BlastService, BlastUnavailableError
+from app.services.l1_structural_query import StructuralQueryService, is_blast_intent
 from app.services.l3_symbol import SymbolService, attach_safe_edit_plan
 from app.services.l5_pack import load_pack_by_repo
 from app.services.l5_phase_pack import DEFAULT_PHASE, pack_for_phase
 from app.services.l5_search import hits_to_relevant_files, hybrid_search
 from app.services.okf_retrieve import attach_okf_evidence, retrieve_okf
+from app.telemetry.blast import record_blast_attributes
 from app.telemetry.context import child_span, context_span, record_duration_ms
 from app.telemetry.symbol import symbol_span
 
@@ -55,9 +61,9 @@ router = APIRouter(tags=["context"])
         "HTTP status codes Proposed only (OQ-HTTP-/context). "
         "FR-019 consumer note: future contextos ask / extension Ask SHOULD call this API; "
         "full Ask <3 clicks / CLI remain EP-004 (EP-003 delivers Pack Context surface only). "
-        "No L4 Headroom gate (ADR-006). No L1 blast expand."
-        " EP-006 may append cited metadata-only L1 structural evidence for supported "
-        "location/ownership questions; failures preserve L5 and blast remains excluded. "
+        "No L4 Headroom gate (ADR-006). "
+        "EP-006/007: cited metadata-only L1 structural evidence for location/ownership; "
+        "EP-007 populates existing blast_radius for blast-intent asks (V1). "
         "Proposed EP-013: OKF-first cited evidence may be appended inside final_context "
         "before L1 enrichment; miss/error preserves L5 hybrid fallback (no new fields)."
     ),
@@ -164,6 +170,25 @@ def post_context(body: ContextRequest) -> ContextResponse:
             logger.warning("L1 structural enrichment unavailable", exc_info=True)
             l1_status = "l1_unavailable"
 
+        blast_radius: dict[str, Any] = {}
+        blast_status = "not_attempted"
+        if is_blast_intent(body.query) or l1_status == "blast_intent":
+            blast_radius, blast_status = _attach_blast_radius(
+                repo=body.repo,
+                file_hint=body.file,
+                query=body.query,
+                settings=settings,
+                span=span,
+            )
+            if blast_status == "blast_attached":
+                l1_status = "blast_attached"
+            elif blast_status == "blast_no_file":
+                l1_status = "blast_intent_no_file"
+            elif blast_status == "blast_miss":
+                l1_status = "blast_miss"
+            elif blast_status == "blast_unavailable":
+                l1_status = "blast_unavailable"
+
         trace: dict[str, Any] = {
             "phase": packed.phase,
             "vector_hits": result.vector_hits,
@@ -180,6 +205,9 @@ def post_context(body: ContextRequest) -> ContextResponse:
             "l1_cache_hit": l1_cache_hit,
             "l1_entity_count": l1_entity_count,
             "l1_duration_ms": l1_duration_ms,
+            # Proposed EP-007 blast status / freshness (non-sensitive)
+            "blast_status": blast_status,
+            "blast_index_revision": blast_radius.get("index_revision"),
             # Proposed EP-013 — non-sensitive status/timing only
             "okf_status": okf_result.status,
             "okf_concept_count": len(okf_result.concepts),
@@ -195,11 +223,61 @@ def post_context(body: ContextRequest) -> ContextResponse:
                 saving_percent=packed.saving_percent,
                 trace=trace,
             ),
-            blast_radius={},  # Proposed empty MVP
+            blast_radius=blast_radius,
             memory={},  # Proposed empty MVP
             relevant_files=hits_to_relevant_files(result.hits),
             is_real=True,
         )
+
+
+def _attach_blast_radius(
+    *,
+    repo: str,
+    file_hint: str | None,
+    query: str,
+    settings: Any,
+    span: Any,
+) -> tuple[dict[str, Any], str]:
+    """Populate Confirmed blast_radius when blast intent applies (EP-007 V1).
+
+    Proposed: body.file preferred; else path-like token extracted from query.
+    Without a resolvable file → empty {} and status blast_no_file (not permanent decline).
+    """
+    target = (file_hint or "").strip() or _extract_path_hint(query)
+    if not target:
+        # Proposed: blast hint without file → stay {} (risk not asserted).
+        return {}, "blast_no_file"
+    try:
+        result = BlastService(settings).compute(repo, target)
+    except BlastNotFoundError:
+        return {}, "blast_miss"
+    except BlastUnavailableError:
+        logger.warning("L1 blast unavailable for /context", exc_info=True)
+        return {}, "blast_unavailable"
+    except Exception:  # noqa: BLE001
+        logger.warning("L1 blast failed for /context", exc_info=True)
+        return {}, "blast_unavailable"
+
+    record_blast_attributes(
+        span,
+        duration_ms=result.duration_ms,
+        hop_depth=result.hop_depth,
+        node_count=result.node_count,
+        direct_count=len(result.direct_dependents),
+        transitive_count=len(result.transitive),
+    )
+    return result.as_response_dict(), "blast_attached"
+
+
+_PATH_HINT_RE = re.compile(
+    r"(?:[\w.-]+/)*[\w.-]+\.(?:py|ts|tsx|js|jsx|go|java)\b",
+    re.IGNORECASE,
+)
+
+
+def _extract_path_hint(query: str) -> str | None:
+    match = _PATH_HINT_RE.search(query or "")
+    return match.group(0) if match else None
 
 
 def _maybe_attach_safe_edit(

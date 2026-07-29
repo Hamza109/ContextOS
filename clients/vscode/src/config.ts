@@ -7,6 +7,8 @@ export const PROPOSED_SETTING_KEYS = {
   autoIndexOnActivate: "contextos.autoIndexOnActivate",
   reindexOnSave: "contextos.reindexOnSave",
   indexTimeoutMs: "contextos.indexTimeoutMs",
+  enableGraphBlastPanel: "contextos.enableGraphBlastPanel",
+  showStalenessWarnings: "contextos.showStalenessWarnings",
 } as const;
 
 export const DEFAULT_ORCHESTRATOR_BASE_URL = "http://localhost:8000";
@@ -21,6 +23,13 @@ export interface ExtensionConfig {
   reindexOnSave: boolean;
   /** Proposed: client abort timeout */
   indexTimeoutMs: number;
+  /** Proposed: enable React Flow blast/graph panel (EP-007 US-020) */
+  enableGraphBlastPanel: boolean;
+  /**
+   * Proposed: show staleness badge/warnings (EP-007 US-027).
+   * Numeric threshold remains NEEDS CLARIFICATION — boolean gate only.
+   */
+  showStalenessWarnings: boolean;
 }
 
 export type ConfigurationSection = {
@@ -49,5 +58,28 @@ export function readExtensionConfig(getConfiguration: GetConfiguration): Extensi
       ? (cfg.get("reindexOnSave") as boolean)
       : true,
     indexTimeoutMs: timeoutMs,
+    enableGraphBlastPanel:
+      typeof cfg?.get("enableGraphBlastPanel") === "boolean"
+        ? (cfg.get("enableGraphBlastPanel") as boolean)
+        : true,
+    showStalenessWarnings:
+      typeof cfg?.get("showStalenessWarnings") === "boolean"
+        ? (cfg.get("showStalenessWarnings") as boolean)
+        : true,
+  };
+}
+
+/** Test helper: full ExtensionConfig with Proposed EP-007 defaults. */
+export function defaultTestConfig(
+  partial: Partial<ExtensionConfig> = {},
+): ExtensionConfig {
+  return {
+    orchestratorBaseUrl: "http://orchestrator.test",
+    autoIndexOnActivate: true,
+    reindexOnSave: true,
+    indexTimeoutMs: 60_000,
+    enableGraphBlastPanel: true,
+    showStalenessWarnings: true,
+    ...partial,
   };
 }

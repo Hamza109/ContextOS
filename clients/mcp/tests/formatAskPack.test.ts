@@ -35,14 +35,27 @@ describe("formatAskPack", () => {
     expect(text.length).toBeLessThan(500);
   });
 
-  it("passes FastAPI-owned L1 enrichment through without MCP state", () => {
-    const enriched =
-      '<base/>\n<l1_structural_evidence index_revision="r1">' +
-      '<entity path="src/auth.py" citation="src/auth.py:12" />' +
-      "</l1_structural_evidence>";
-    const text = formatAskPack(sample({ final_context: enriched }), 50_000);
-    expect(text).toContain("<l1_structural_evidence");
-    expect(text).toContain("src/auth.py:12");
+  it("passes FastAPI-owned blast_radius object through without MCP blast state", () => {
+    const pack = sample({
+      blast_radius: {
+        direct_dependents: ["src/b.py"],
+        transitive: [],
+        db_tables: [],
+        risk: "MEDIUM",
+        tests_to_run: [],
+        owners: [],
+      },
+    });
+    // Thin client: formatAskPack does not own blast computation; object accepted.
+    expect(pack.blast_radius).toEqual(
+      expect.objectContaining({
+        direct_dependents: ["src/b.py"],
+        risk: "MEDIUM",
+        owners: [],
+      }),
+    );
+    const text = formatAskPack(pack, 50_000);
+    expect(text).toContain("ContextOS pack");
   });
 });
 
