@@ -172,13 +172,28 @@ describe("no_client_policy_bypass (T050/T056/T017/SC-008)", () => {
       "Extension triggers POST /index only for indexing",
       "Pack Context triggers POST /context only",
       "Ask ContextOS triggers POST /context only (EP-004 US-008)",
+      "Blast graph triggers GET /blast only (EP-007 US-020) — no client blast traversal",
       "Symbol DX uses Serena MCP client — no local symbol policy",
       "No local pack/flatten",
       "No client exclusion / consent application",
       "No embedding or vector store client in extension",
       "No rename execution / ContextOS sandbox UX",
     ];
-    expect(checklist.length).toBe(8);
+    expect(checklist.length).toBe(9);
+  });
+
+  it("EP-007: blast panel modules must not invent blast traversal (T028)", () => {
+    const blastFiles = [
+      path.join(SRC_ROOT, "api/blastClient.ts"),
+      path.join(SRC_ROOT, "providers/blastGraphModel.ts"),
+      path.join(SRC_ROOT, "providers/graphBlastPanel.ts"),
+    ];
+    for (const file of blastFiles) {
+      expect(fs.existsSync(file), file).toBe(true);
+      const stripped = stripComments(fs.readFileSync(file, "utf8"));
+      expect(stripped).not.toMatch(/computeBlastRadius|traverseImports|FalkorDB/i);
+      expect(stripped).not.toMatch(/ignore_policy|IgnorePolicy/);
+    }
   });
 
   it("EP-005 SC-003: indexClient cannot force-include excluded paths around orchestrator", async () => {

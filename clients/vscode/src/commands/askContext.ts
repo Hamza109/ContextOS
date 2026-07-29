@@ -166,7 +166,11 @@ export async function runAskContext(
       });
     log(wallMs, response.metrics.latency_ms);
 
-    deps.presentReport(formatAskContextReport(response));
+    deps.presentReport(
+      formatAskContextReport(response, {
+        showStalenessWarnings: config.showStalenessWarnings,
+      }),
+    );
     deps.showInformationMessage(
       `ContextOS: Ask ready (${response.metrics.tokens_after} compacted tokens)`,
     );

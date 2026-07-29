@@ -13,6 +13,8 @@ const baseConfig: ExtensionConfig = {
   autoIndexOnActivate: true,
   reindexOnSave: true,
   indexTimeoutMs: 60_000,
+  enableGraphBlastPanel: true,
+  showStalenessWarnings: true,
 };
 
 describe("index_cancellation (T049)", () => {

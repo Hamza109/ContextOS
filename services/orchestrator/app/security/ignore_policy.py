@@ -105,6 +105,35 @@ BINARY_EXTENSIONS: frozenset[str] = frozenset(
 )
 
 
+def path_is_hard_excluded(rel_posix: str) -> bool:
+    """Defense-in-depth filter for blast/graph path serialization (EP-007).
+
+    Reuses HARD_EXCLUDE_* / SECRET_FILE_GLOBS / BINARY_EXTENSIONS without a
+    repository root. Callers must not reimplement IgnorePolicy in MCP/extension.
+    """
+    normalized = (rel_posix or "").replace("\\", "/")
+    while normalized.startswith("./"):
+        normalized = normalized[2:]
+    normalized = normalized.lstrip("/")
+    if not normalized:
+        return True
+    parts = [p for p in normalized.split("/") if p]
+    if any(part in HARD_EXCLUDE_DIR_NAMES for part in parts[:-1]):
+        return True
+    if parts and parts[0] in HARD_EXCLUDE_DIR_NAMES:
+        return True
+    name = parts[-1] if parts else normalized
+    if name in HARD_EXCLUDE_FILE_NAMES or name.startswith(".env"):
+        return True
+    for glob in SECRET_FILE_GLOBS:
+        if fnmatch.fnmatch(name, glob) or fnmatch.fnmatch(normalized, glob):
+            return True
+    suffix = Path(name).suffix.lower()
+    if suffix in BINARY_EXTENSIONS:
+        return True
+    return False
+
+
 @dataclass
 class IgnorePolicy:
     """Single enforcement point for walk/pack/index exclusions."""

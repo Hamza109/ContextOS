@@ -1731,3 +1731,379 @@ Task IDs: T001–T030 all complete
 
 - None
 
+
+---
+
+## Handoff: spec-writer
+
+Date: 2026-07-28
+
+Feature: ep-007-l1-blast-visualization
+
+Source Input: docs/backlog/user-stories.md EP-007 (US-018, US-019, US-020, US-027); BRD FR-08/FR-09; ADR-010; api-contract §2.4–2.5
+
+Artifacts Reviewed: backlog EP-007; api-contract blast/graph; EP-006 spec (prerequisite); constitution
+
+Artifacts Created or Updated: (pending) specs/ep-007-l1-blast-visualization/spec.md
+
+### What was completed
+
+- Branch feature/ep-007-l1-blast-visualization checked out
+- Graphify query for blast/graph surfaces run
+- PM orchestration started for Spec Kit triad + validation only
+
+### What failed
+
+- None
+
+### Next instructions
+
+- Write lean specs/ep-007-l1-blast-visualization/spec.md for US-018/019/020/027 only
+- Reuse EP-006 L1; OUT OF SCOPE: EP-013 OKF, EP-008/010/011, L1 parser redesign
+- OQ-15 owners: Proposed / NEEDS CLARIFICATION only
+- Do not invent Confirmed contracts; put OQs in spec.md
+
+### Blocking questions
+
+- None for draft; OQ-15 and graph.html auth remain open as labeled clarifications
+
+---
+
+## Handoff: plan-generator
+
+Date: 2026-07-28
+
+Feature: ep-007-l1-blast-visualization
+
+Source Input: specs/ep-007-l1-blast-visualization/spec.md (US-018, US-019, US-020, US-027)
+
+Artifacts Reviewed: backlog EP-007; BRD FR-08/09 §10/12/13/14/15; ADR-010; api-contract §2.3–2.5; database-schema blast; EP-006 spec; constitution
+
+Artifacts Created or Updated: specs/ep-007-l1-blast-visualization/spec.md
+
+### What was completed
+
+- Lean Spec Kit `spec.md` written for EP-007 only
+- Story coverage: US-018 blast, US-019 graph.html, US-020 React Flow (phaseable), US-027 staleness
+- Confirmed vs Proposed contracts labeled; OQ-15 / auth / freshness threshold as NEEDS CLARIFICATION
+
+### What failed
+
+- None
+
+### Next instructions
+
+- Generate lean `plan.md` from this spec only (no quickstart / adjunct files)
+- Reuse EP-006 FalkorDB L1; OUT OF SCOPE: EP-013 OKF, EP-008/010/011, L1 parser redesign
+- Plan FastAPI blast + graph.html first; VS Code React Flow may phase after
+- Do not invent Confirmed owners schema, auth, or freshness threshold
+
+### Blocking questions
+
+- OQ-15 owners shape (Proposed `owners: []` only)
+- graph.html embedding auth (api-contract)
+- Freshness threshold for staleness badge (Not evidenced)
+
+
+---
+
+## Handoff: plan-generator → task-generator
+
+Date: 2026-07-28
+
+Feature: ep-007-l1-blast-visualization
+
+Source Input: specs/ep-007-l1-blast-visualization/spec.md
+
+Artifacts Reviewed: constitution; plan-template; EP-006 plan/spec; api-contract §2.3–2.5; ADR-010; database-schema §3/§6; orchestrator L1/context blast_declined; graphify EP-007 query
+
+Artifacts Created or Updated: specs/ep-007-l1-blast-visualization/plan.md; .cursor/agent-handoffs/ep-007-brief.md
+
+### What was completed
+
+- Lean plan.md: FastAPI owns GET /blast, GET /graph.html, V1 blast_radius populate; reuse EP-006 FalkorDB L1
+- US-020 React Flow phaseable after API but kept in epic/phases; US-027 staleness Planned
+- NFR harness plan for p95 <2s @ 3-hop/10k and accuracy >95% (validation targets, not pass claims)
+- OQs carried: OQ-15, graph.html auth, freshness threshold, db_tables/tests linkage, risk scoring
+
+### What failed
+
+- None
+
+### Next instructions
+
+- Generate specs/ep-007-l1-blast-visualization/tasks.md from plan + brief
+- Group by US-018 → US-019 → US-020 (phaseable) → US-027; include harness/privacy/MCP-thin tasks
+- Do not invent Confirmed owners/auth/threshold; do not touch OKF or L1 parser redesign
+
+### Blocking questions
+
+- None for task generation; clarifications remain labeled non-blocking for Confirmed field delivery
+
+
+---
+
+## Handoff: task-generator → test-validation-agent
+
+Date: 2026-07-28
+
+Feature: ep-007-l1-blast-visualization
+
+Source Input: specs/ep-007-l1-blast-visualization/spec.md + plan.md
+
+Artifacts Reviewed: constitution; tasks-template; EP-006 tasks style; ep-007-brief; api-contract §2.3–2.5; ADR-010; orchestrator L1/context/ignore_policy; graphify EP-007 query
+
+Artifacts Created or Updated: specs/ep-007-l1-blast-visualization/tasks.md (T001–T042)
+
+### What was completed
+
+- tasks.md: Phase 1 discovery → Phase 2 foundation → US-018 → US-019 → US-020 (phaseable) → US-027 + polish
+- Coverage: FR-001–FR-009; IgnorePolicy/no-exfil tests; MCP thin; OKF/L1-parser out of scope
+- NFR: T005/T006 design + T021 scaffold + T037/T038 opt-in latency (p95 <2s @ 3-hop/10k) and accuracy (>95%) — no false pass
+- OQ-15 owners Proposed `owners: []` only; no Confirmed owners/auth/threshold/risk/linkage invented
+
+### What failed
+
+- None
+
+### Next instructions
+
+- Validate tasks.md against spec/plan/constitution (coverage, ordering, no invented Confirmed contracts)
+- Produce specs/ep-007-l1-blast-visualization/validation-report.md for Spec Kit triad
+- Confirm US-020 kept in epic; harness tasks are opt-in/evidence-bound
+
+### Blocking questions
+
+- None for validation of task list; product OQs remain labeled NEEDS CLARIFICATION
+
+
+---
+
+## Handoff: test-validation-agent → lead-developer-agent
+
+Date: 2026-07-28
+
+Feature: ep-007-l1-blast-visualization
+
+Source Input: specs/ep-007-l1-blast-visualization/{spec,plan,tasks}.md
+
+Artifacts Reviewed: constitution; api-contract §2.3–2.5; backlog EP-007/US-018–027/OQ-15; EP-006 paths; lean-spec-kit; ep-007-brief; graphify EP-007 query
+
+Artifacts Created or Updated: specs/ep-007-l1-blast-visualization/validation-report.md
+
+### What was completed
+
+- Triad validation: US-018/019/020/027 only; L1 primary + L5 blast_radius dependency; OKF/L2/L4/L6 out
+- OQ-15 / auth / threshold / risk / linkage remain Proposed or NEEDS CLARIFICATION (not invented Confirmed)
+- NFR harnesses planned (T005–T006, T021, T037–T038) — no pass claims; no test execution reviewed
+- US-020 kept phaseable with T028–T032
+- Decision: CONDITIONAL APPROVAL — Overall 8.8/10 — Ready for lead-developer-agent: Yes
+
+### What failed
+
+- None (planning gate). graphify update needed unrestricted perms (sandbox).
+
+### Next instructions
+
+- Implement Phases 1–2 then US-018 → US-019; phase US-020; US-027 + harness evidence
+- Proposed owners:[] only; IgnorePolicy/no-exfil; FastAPI owns policy; MCP thin; no L1 parser/OKF changes
+- Record T037/T038 results in validation-report — no false NFR pass
+
+### Blocking questions
+
+- None for kickoff. Residual OQs: OQ-15 owners; graph.html auth; freshness threshold; db_tables/tests linkage; risk scoring
+
+---
+
+## Handoff: lead-developer-agent
+
+Date: 2026-07-29
+
+Feature: ep-007-l1-blast-visualization
+
+Task IDs: T001–T042 (phased)
+
+Source Input: Spec Kit triad + ep-007-brief; branch feature/ep-007-l1-blast-visualization
+
+Artifacts Reviewed: validation-report CONDITIONAL 8.8; api-contract §2.4–2.5; EP-006 L1 paths; graphify blast/graph
+
+Artifacts Created or Updated: this handoff
+
+### What was completed
+
+- Kickoff: Graphify + artifact review; UI/UX N/A (API HTML + lean VS Code)
+- Checklist: Foundation T001–T006 → T007–T010 → US-018 → US-019 → US-020 → US-027+polish
+
+### Next instructions
+
+- Backend ships GET /blast + graph.html + context blast_radius first
+- Extension: React Flow + staleness after API
+- Testing then review-report; no commit/push; no OKF/L1-parser; owners:[] only
+
+### Blocking questions
+
+- None. Residual OQs: owners/auth/threshold/linkage/risk
+
+
+---
+
+## Handoff: backend-agent (EP-007 FastAPI)
+
+Date: 2026-07-29
+Feature: ep-007-l1-blast-visualization
+Branch: feature/ep-007-l1-blast-visualization
+Task IDs: T001–T027, T034, T021; api-side T033/T039–T041
+
+### What was completed
+
+- `GET /blast/{file_name}?repo=` + `l1_blast.py` + FalkorDB/InMemory reverse-IMPORTS helpers
+- `GET /graph.html?repo=` vis-network (physics off, arrows, #64748b/#0f172a, depth 1–5)
+- V1 `POST /context` `blast_radius` populate (`blast_attached` / `blast_intent_no_file`)
+- Proposed: `owners:[]`, `index_revision`, heuristics in `l1_blast` docstring; IgnorePolicy `path_is_hard_excluded`
+- Tests: unit/contract/integration blast+graph+context (35 passed); perf/eval harnesses skip-by-default
+- Docs: api-contract §2.4–2.5; main.py EP-007; MCP thin blast_radius regression
+- **Not done**: T028–T032/T035 VS Code; T037–T038 harness execution; T042 validation-report evidence
+
+### Next instructions
+
+- vscode-extension-engineer: US-020 React Flow + US-027 badge on FastAPI blast/graph + `index_revision`/`data-stale`
+- Testing: run T037/T038 opt-in; record validation-report; then review-report
+- Do not commit/push from this handoff
+
+### Residual risks / OQs
+
+- OQ-15 owners; graph.html auth; freshness threshold; risk/db_tables/tests L2 linkage Incomplete
+- memory:// shared store for tests; live FalkorDB compose smoke opt-in only
+
+
+---
+
+## Handoff: vscode-extension-engineer (EP-007 US-020/027)
+
+Date: 2026-07-29
+Feature: ep-007-l1-blast-visualization
+Branch: feature/ep-007-l1-blast-visualization
+Task IDs: T028–T032, T033 (ext), T035–T036
+
+### What was completed
+
+- Command `contextos.showBlastGraph` → React Flow Webview (`graphBlastPanel` + `media/graphBlast.js`)
+- Thin `GET /blast` client; nodes/edges from dependents/transitive only (no client blast)
+- Sanitize IPC (`webviewSanitize.ts`); graph.html embed auth **NEEDS CLARIFICATION** — not used
+- Staleness: Proposed `stale` flag + revision drift; config `showStalenessWarnings`; badge on panel + status bar + Ask/Pack banners
+- Vitest: webview_sanitize, graph_blast_panel, staleness_presenter + no_client_policy_bypass (54 passed)
+
+### T036 appear/clear scenario (for validation-report)
+
+1. Open file → Show Blast Graph → baseline adopts `index_revision` (fresh).
+2. Payload `stale:true` or revision ≠ baseline → badge/status bar warn.
+3. Index Repository → `markIndexed()` clears baseline; refresh blast with matching/`stale:false` → badge clears.
+4. Threshold numeric constant: **NEEDS CLARIFICATION** (boolean gate only).
+
+### Next instructions
+
+- testing-agent: T037–T038 harnesses + validation-report evidence; T042
+- Do not commit/push from this handoff
+
+### Residual risks
+
+- graph.html auth OQ; freshness threshold OQ; no live IDE Webview E2E in vitest
+
+
+---
+
+## Handoff: testing-agent (EP-007 T037–T042)
+
+Date: 2026-07-29
+Feature: ep-007-l1-blast-visualization
+Branch: feature/ep-007-l1-blast-visualization @ 7d9d4a8
+Task IDs: T037–T042 (+ reconfirm T039–T041)
+
+### What was completed
+
+- Orchestrator blast/graph/context: **27 passed, 3 skipped** (default); privacy no-exfil green
+- Opt-in T037 latency: InMemory 10k/3-hop **p95≈9.16ms** → SC-001 **PASS (harness)**; live Falkor residual
+- Opt-in T038 accuracy: path-derived tests P/R=1.0 → SC-002 **PARTIAL** (L2 Incomplete)
+- MCP formatAskPack **4/4**; VS Code vitest **54 pass / 1 skip**; OKF untouched; api-contract §2.4–2.5 OK
+- Compose smoke: **SKIPPED** — `:8000` image lacks `/blast`+`/graph.html`; fixture not mounted
+- Evidence: `specs/ep-007-l1-blast-visualization/validation-report.md` Implementation Evidence; tasks T037–T042 [x]
+
+### What failed / skipped
+
+- Live compose EP-007 routes unavailable on running stack
+- Full SC-002 blocked (owners/db_tables/risk Incomplete)
+
+### Next instructions
+
+- **review-pr-readiness-agent**: ready with residuals below; write `review-report.md`
+- Do not claim full SC-002 or live-Falkor SC-001; do not invent Confirmed OQ contracts
+- Do not commit/push from this handoff
+
+### Residual risks / OQs
+
+- OQ-15 owners; graph.html auth; freshness threshold; L2 linkage; risk algorithm
+- Redeploy compose with EP-007 image for live smoke + optional Falkor latency
+
+
+
+## Handoff: review-pr-readiness-agent (EP-007)
+
+Date: 2026-07-29
+Feature: ep-007-l1-blast-visualization
+Branch: feature/ep-007-l1-blast-visualization @ 7d9d4a8
+Artifact: specs/ep-007-l1-blast-visualization/review-report.md
+
+### Verdict
+
+- Status: APPROVED WITH CONCERNS | Score **8.1/10**
+- **PR ready: Yes with comments** (conditional disclosure)
+- Stories US-018/019/020/027 implemented; T001–T042 tasked complete
+
+### Evidence cited
+
+- Orchestrator 27 PASS (+skips); privacy no-exfil PASS; VS Code 54; MCP 4; EP-006 8; OKF untouched
+- SC-001 PASS InMemory p95≈9ms — live Falkor **unmeasured**
+- SC-002 **PARTIAL** (path-derived P/R=1.0; L2 Incomplete)
+- Compose smoke **SKIPPED** (pre-EP-007 image)
+
+### Conditions / residuals
+
+- Disclose SC-001/002/Compose residuals in PR; confirm CI green after open
+- OQs open: owners, graph.html auth, freshness threshold, risk/db_tables/tests
+- Prefer Compose redeploy + Falkor latency before merge confidence on live stack
+
+### Next
+
+- Human/lead: open PR with comments; do not claim full SC-002 or live-Falkor SC-001
+- Do not commit/push from this handoff
+
+---
+
+## Handoff: lead-developer-agent (complete)
+
+Date: 2026-07-29
+
+Feature: ep-007-l1-blast-visualization
+
+Task IDs: T001–T042 all checked
+
+### What was completed
+
+- Orchestrated: backend → vscode-extension → testing → review-pr-readiness
+- Shipped: GET /blast, GET /graph.html, V1 blast_radius, React Flow panel, Proposed staleness
+- Evidence: orchestrator/MCP/vscode green; SC-001 InMemory; SC-002 Partial
+- Artifacts: review-report.md (8.1 APPROVED WITH CONCERNS); brief updated
+- No commit/push
+
+### What failed
+
+- None blocking. Compose smoke skipped; live Falkor latency unmeasured
+
+### Next instructions
+
+- Parent may open PR with residual disclosure; verify CI; optional Compose redeploy
+
+### Blocking questions
+
+- None for PR open. OQs remain labeled (owners/auth/threshold/linkage/risk)
+

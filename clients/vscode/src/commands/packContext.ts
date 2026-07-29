@@ -73,7 +73,11 @@ export async function runPackContext(
       fetchImpl: deps.fetchImpl,
       signal: deps.signal,
     });
-    deps.presentReport(formatPackContextReport(response));
+    deps.presentReport(
+      formatPackContextReport(response, {
+        showStalenessWarnings: config.showStalenessWarnings,
+      }),
+    );
     deps.showInformationMessage(
       `ContextOS: Pack Context ready (${response.metrics.tokens_after} compacted tokens)`,
     );

@@ -85,3 +85,12 @@ def test_openapi_has_no_confirmed_symbol_rest_paths() -> None:
 def test_no_l1_cache_or_graph_response_fields() -> None:
     fields = set(ContextResponse.model_fields)
     assert fields.isdisjoint({"l1", "graph", "entities", "cache", "index_revision"})
+
+
+def test_openapi_includes_blast_and_graph_routes() -> None:
+    """EP-007 Confirmed Appendix D routes present; context field set unchanged."""
+    client = TestClient(app)
+    paths = set(client.get("/openapi.json").json()["paths"].keys())
+    assert "/context" in paths
+    assert "/graph.html" in paths
+    assert any(p.startswith("/blast/") for p in paths)

@@ -25,3 +25,20 @@ export {
   formatAskContextReport,
   formatRelevantFiles,
 } from "./askContextPresenter";
+export {
+  evaluateStaleness,
+  extractFreshnessSignal,
+  formatStalenessBanner,
+  FreshnessSession,
+  STALE_BADGE_TEXT,
+} from "./stalenessPresenter";
+export {
+  sanitizeExtToWebviewMessage,
+  sanitizeWebviewToExtMessage,
+} from "./webviewSanitize";
+export { blastResponseToGraphModel } from "./blastGraphModel";
+export {
+  SHOW_BLAST_GRAPH_COMMAND,
+  openGraphBlastPanel,
+  buildWebviewHtml,
+} from "./graphBlastPanel";

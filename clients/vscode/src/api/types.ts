@@ -65,3 +65,26 @@ export interface ContextResponse {
   relevant_files: unknown[];
   is_real: boolean;
 }
+
+/**
+ * Confirmed GET /blast/{file_name}?repo= response fields (api-contract §2.4 / FR-08).
+ * owners + index_revision are Proposed only (OQ-15 / US-027) — not Confirmed §2.4.
+ */
+export type BlastRisk = "HIGH" | "MEDIUM" | "LOW";
+
+export interface BlastResponse {
+  direct_dependents: string[];
+  transitive: string[];
+  db_tables: string[];
+  risk: BlastRisk;
+  tests_to_run: string[];
+  /** Proposed OQ-15: empty array only — no Confirmed element schema */
+  owners?: unknown[];
+  /** Proposed freshness signal (US-027) — NOT Confirmed §2.4 */
+  index_revision?: string | null;
+  /**
+   * Proposed optional explicit stale flag when present on payloads.
+   * Numeric freshness threshold remains NEEDS CLARIFICATION — do not invent Confirmed constant.
+   */
+  stale?: boolean;
+}

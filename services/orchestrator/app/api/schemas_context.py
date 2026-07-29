@@ -129,7 +129,10 @@ class ContextResponse(BaseModel):
     metrics: ContextMetrics
     blast_radius: dict[str, Any] | None = Field(
         default=None,
-        description="Confirmed key; empty/null MVP (Proposed V1 blast)",
+        description=(
+            "Confirmed key; EP-007 V1 populates FR-08 fields + Proposed owners:[] "
+            "when blast intent applies; otherwise empty/null"
+        ),
     )
     memory: dict[str, Any] | None = Field(
         default=None,

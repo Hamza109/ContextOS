@@ -145,7 +145,8 @@ FastAPI may append a delimited, cited L1 evidence block inside the existing `fin
 string and add non-sensitive cache/status/timing values inside the existing `metrics.trace`.
 The response shape is unchanged. Cache miss, stale revision, unsupported intent, or
 unavailable L1 preserves the existing L5 context. `contextos_ask` remains a stateless thin
-client. Blast-radius computation remains outside EP-006.
+client. Blast-radius computation is delivered in EP-007 (`GET /blast`, V1 `blast_radius`
+populate) — see §2.4.
 
 **EP-013 Proposed implementation note:** FastAPI may attempt OKF concept/link lookup before
 L1 structural enrichment and L5 BM25/vector fallback. Cited OKF evidence may appear only
@@ -174,12 +175,22 @@ error preserves hybrid search. MCP remains a stateless pass-through.
 }
 ```
 
-**Owners list** mentioned in FR-08 prose — include as **Proposed** field `owners: []` until schema confirmed.
+**Owners list** mentioned in FR-08 prose — include as **Proposed** field `owners: []` until schema confirmed (OQ-15 — **no** Confirmed element schema).
+
+**EP-007 implementation notes (Proposed — not Confirmed):**
+- Hop bound default **3** (BRD `IMPORTS*1..3` context); optional Proposed `max_hops` query 1–5.
+- Reverse `IMPORTS` dependents (files that import the target); paths/ids only — no source bodies.
+- `db_tables`: V1 always `[]` (L2 Missing Evidence).
+- `tests_to_run`: path-derived conservative candidates from existing File nodes under `tests/` only — **not** Confirmed L2 linkage.
+- `risk`: conservative L1-only heuristic (documented in `l1_blast.py`) — **not** a Confirmed scoring algorithm.
+- `index_revision`: **Proposed** optional freshness field on the JSON response (US-027); threshold remains **NEEDS CLARIFICATION**.
+- `POST /context` populates existing Confirmed `blast_radius` with the same field set when blast intent applies + resolvable file; without file → Proposed empty `{}` (`blast_intent_no_file`). Status codes for `/context` unchanged.
+- IgnorePolicy hard-exclude reuse on path serialization (FastAPI-owned; MCP thin).
 
 | Aspect | Detail |
 |--------|--------|
-| Latency target | p95 <2s for 3-hop / 10k nodes (BRD §10) |
-| Status codes | **Not evidenced** — **Proposed:** `200`; `404` file/repo; `501` if called pre-V1 |
+| Latency target | p95 <2s for 3-hop / 10k nodes (BRD §10) — validation harness opt-in; no pass without evidence |
+| Status codes | **Not evidenced** — **Proposed:** `200`; `404` file/repo; `503` store unavailable |
 
 ---
 
@@ -191,8 +202,13 @@ error preserves hybrid search. MCP remains a stateless pass-through.
 | Aspect | Detail |
 |--------|--------|
 | Format | HTML with vis-network; nodes=files, edges=IMPORTS; physics disabled; arrows; color `#64748b`; background `#0f172a` (BRD §14) |
-| Auth | **NEEDS CLARIFICATION** (static HTML may embed in Webview) |
-| Status codes | **Not evidenced** — **Proposed:** `200` text/html; `404` unknown repo |
+| Depth | Interactive **1–5** (Confirmed FR-09); server clamps query `depth` |
+| Auth | **NEEDS CLARIFICATION** (static HTML may embed in Webview) — local trusted-client draft only for V1 |
+| Freshness | **Proposed** `data-index-revision` / HTML comment; `data-stale="false"` default — numeric threshold **NEEDS CLARIFICATION** |
+| Status codes | **Not evidenced** — **Proposed:** `200` text/html; `404` unknown repo; `503` store unavailable |
+| Privacy | Metadata/paths only; IgnorePolicy hard-excludes filtered; no source bodies |
+
+**EP-007 note:** CDN vis-network is acceptable for local trusted draft. Payload size capped. No Confirmed auth claim.
 
 ---
 

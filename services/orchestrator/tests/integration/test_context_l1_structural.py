@@ -64,7 +64,7 @@ def test_context_appends_cited_structural_evidence_on_cache_hit(monkeypatch) -> 
     assert body["metrics"]["trace"]["l1_cache_hit"] is True
 
 
-def test_context_l1_miss_and_blast_decline_preserve_l5(monkeypatch) -> None:
+def test_context_l1_miss_and_blast_intent_preserve_l5(monkeypatch) -> None:
     _patch_l5(monkeypatch)
     client = TestClient(app)
     miss = client.post(
@@ -76,10 +76,50 @@ def test_context_l1_miss_and_blast_decline_preserve_l5(monkeypatch) -> None:
 
     cache = get_l1_entity_cache()
     cache.refresh("repo", "revision-1", [_entity()])
+    # EP-007: blast hint without file → not permanent blast_declined; empty blast_radius.
     blast = client.post(
         "/context",
         json={"query": "what is the blast radius of auth?", "repo": "repo", "top_k": 8},
     ).json()
     assert blast["final_context"] == "<base/>"
-    assert blast["metrics"]["trace"]["l1_structural_status"] == "blast_declined"
+    assert blast["metrics"]["trace"]["l1_structural_status"] == "blast_intent_no_file"
     assert blast["blast_radius"] == {}
+    assert blast["metrics"]["trace"]["blast_status"] == "blast_no_file"
+
+
+def test_context_blast_intent_with_file_populates_blast_radius(monkeypatch) -> None:
+    _patch_l5(monkeypatch)
+    from app.adapters.falkordb_store import get_graph_store, reset_memory_graph_store
+    from app.adapters.l1_parser import StructuralEdge, StructuralNode
+    from app.config import Settings, get_settings
+
+    reset_memory_graph_store()
+    get_settings.cache_clear()
+    store = get_graph_store(Settings(falkordb_url="memory://ep006-tests"))
+    a = StructuralNode("a", "repo", "src/auth.py", "File", "src/auth.py", 1, 2, "r1")
+    b = StructuralNode("b", "repo", "src/app.py", "File", "src/app.py", 1, 2, "r1")
+    store.persist(
+        "repo",
+        "r1",
+        [a, b],
+        [StructuralEdge("b", "a", "IMPORTS", "repo", "src/app.py", "r1")],
+    )
+
+    client = TestClient(app)
+    body = client.post(
+        "/context",
+        json={
+            "query": "what is the blast radius of auth?",
+            "file": "src/auth.py",
+            "repo": "repo",
+            "top_k": 8,
+        },
+    ).json()
+    assert body["final_context"] == "<base/>"
+    blast = body["blast_radius"]
+    assert blast["direct_dependents"] == ["src/app.py"]
+    assert blast["db_tables"] == []
+    assert blast["owners"] == []
+    assert blast["risk"] in {"HIGH", "MEDIUM", "LOW"}
+    assert body["metrics"]["trace"]["l1_structural_status"] == "blast_attached"
+    assert body["metrics"]["trace"]["blast_status"] == "blast_attached"
