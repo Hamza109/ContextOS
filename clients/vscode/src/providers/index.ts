@@ -26,6 +26,12 @@ export {
   formatRelevantFiles,
 } from "./askContextPresenter";
 export {
+  buildBlastApiUrl,
+  buildGraphHtmlUrl,
+  extractPathHint,
+  formatGraphDiscoverySection,
+} from "./graphLinks";
+export {
   evaluateStaleness,
   extractFreshnessSignal,
   formatStalenessBanner,

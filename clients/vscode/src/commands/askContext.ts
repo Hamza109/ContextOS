@@ -169,6 +169,10 @@ export async function runAskContext(
     deps.presentReport(
       formatAskContextReport(response, {
         showStalenessWarnings: config.showStalenessWarnings,
+        orchestratorBaseUrl: config.orchestratorBaseUrl,
+        repo: ws.repo_name,
+        file: snap?.relativePath,
+        query,
       }),
     );
     deps.showInformationMessage(

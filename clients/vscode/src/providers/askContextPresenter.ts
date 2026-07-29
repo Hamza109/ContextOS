@@ -2,9 +2,14 @@
  * Ask ContextOS presentation (T041).
  * Formats orchestrator final_context + relevant_files for Output Channel.
  * No local packing / search / symbol policy — DX only.
+ * Proposed: surface FastAPI graph.html / blast URLs for discoverability.
  */
 
 import type { ContextResponse } from "../api/types";
+import {
+  formatGraphDiscoverySection,
+  hasBlastPayload,
+} from "./graphLinks";
 import {
   evaluateStaleness,
   extractFreshnessSignal,
@@ -15,6 +20,11 @@ export interface AskReportOptions {
   /** Proposed US-027: surface staleness on search/Ask DX when flag set */
   showStalenessWarnings?: boolean;
   baselineRevision?: string | null;
+  /** Orchestrator base URL for openable /graph.html and /blast links. */
+  orchestratorBaseUrl?: string;
+  repo?: string;
+  file?: string | null;
+  query?: string;
 }
 
 /** Format relevant_files array for human-readable Ask report (Proposed layout). */
@@ -47,7 +57,8 @@ export function formatRelevantFiles(relevantFiles: unknown[]): string {
 /**
  * Present Ask results from Confirmed ContextResponse fields only.
  * Does not pack, filter, or enrich beyond display formatting.
- * Proposed: append staleness banner when blast_radius freshness indicates drift.
+ * Proposed: append staleness banner when blast_radius freshness indicates drift;
+ * append blast_radius JSON + graph.html / blast API links when available.
  */
 export function formatAskContextReport(
   response: ContextResponse,
@@ -71,8 +82,31 @@ export function formatAskContextReport(
   headerLines.push("");
 
   const files = formatRelevantFiles(response.relevant_files);
-  return (
+  const parts = [
     `${headerLines.join("\n")}${response.final_context}\n\n` +
-    `--- relevant_files ---\n${files}`
-  );
+      `--- relevant_files ---\n${files}`,
+  ];
+
+  if (hasBlastPayload(response.blast_radius)) {
+    parts.push(
+      "",
+      "--- blast_radius (L1 reverse IMPORTS from FastAPI) ---",
+      JSON.stringify(response.blast_radius, null, 2),
+      "Note: this is who imports the file — not Nest/module wiring inside the file.",
+    );
+  }
+
+  if (opts.orchestratorBaseUrl && opts.repo) {
+    parts.push(
+      "",
+      formatGraphDiscoverySection({
+        baseUrl: opts.orchestratorBaseUrl,
+        repo: opts.repo,
+        file: opts.file,
+        query: opts.query,
+      }),
+    );
+  }
+
+  return parts.join("\n");
 }

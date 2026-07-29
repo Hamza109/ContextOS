@@ -116,7 +116,7 @@ export function createContextOsMcpServer(options?: {
 
   server.tool(
     "contextos_ask",
-    "Budgeted ContextOS retrieve+pack via Confirmed POST /context. Prefer this before dumping many source files. Requires the repo to be indexed (POST /index). Returns compressed final_context + relevant_files.",
+    "Budgeted ContextOS retrieve+pack via Confirmed POST /context. Prefer this before dumping many source files. Requires the repo to be indexed (POST /index). Returns compressed final_context, relevant_files, L1 blast_radius when present, and openable /graph.html + /blast links.",
     {
       query: z.string().min(1).describe("Natural-language question about the indexed repo"),
       repo: z
@@ -150,7 +150,12 @@ export function createContextOsMcpServer(options?: {
           top_k: top_k ?? DEFAULT_TOP_K,
           file: file ?? null,
         });
-        const text = formatAskPack(response, max_chars ?? DEFAULT_MAX_CHARS);
+        const text = formatAskPack(response, max_chars ?? DEFAULT_MAX_CHARS, {
+          baseUrl,
+          repo,
+          file: file ?? null,
+          query,
+        });
         return {
           content: [{ type: "text" as const, text }],
         };
