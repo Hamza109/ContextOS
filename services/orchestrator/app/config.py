@@ -148,6 +148,45 @@ class Settings(BaseSettings):
         ),
     )
 
+    # --- EP-008 Proposed L4 knobs (NOT Confirmed Appendix D; OQ-07/08/09 open) ---
+    l4_enabled: bool = Field(
+        default=False,
+        description=(
+            "Proposed: enable L4 Headroom-style compression on POST /context "
+            "(default off — packing-estimate metrics when false)"
+        ),
+    )
+    # Injectable phase → max_tokens. No Confirmed Dev=8k/12k (OQ-07). Design=32k is an
+    # evidenced FR-11 example only — populate via env/tests, not hard-coded product truth.
+    phase_budgets: dict[str, int] = Field(
+        default_factory=dict,
+        description=(
+            "Proposed: phase→max_tokens map (JSON env OK). Empty = no hard ceiling. "
+            "Dev canonical value [NEEDS CLARIFICATION: OQ-07]."
+        ),
+    )
+    # Optional $/token stub — rates Missing Evidence (OQ-EP008-c); token-delta is primary.
+    l4_cost_rate_per_1k_tokens: float | None = Field(
+        default=None,
+        description=(
+            "Proposed optional cost stub ($ per 1k tokens). Missing Evidence for "
+            "product rates — emit token-delta cost_saved when unset."
+        ),
+    )
+    l4_relevance_summarize_threshold: float = Field(
+        default=0.45,
+        ge=0.0,
+        le=1.0,
+        description="Proposed: units at/below this relevance score are summarized aggressively",
+    )
+    l4_telemetry_enabled: bool = Field(
+        default=True,
+        description=(
+            "Proposed: emit OTel-compatible compression attrs when L4 runs "
+            "(OQ-EP008-b opt-out shape open — honor this flag only)"
+        ),
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:

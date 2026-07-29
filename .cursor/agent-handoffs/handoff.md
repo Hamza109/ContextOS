@@ -2358,3 +2358,106 @@ Artifacts Reviewed: plan/tasks; api/context.py (l4_gate=false); l5_phase_pack; c
 ### Blocking questions
 
 - OQ-07 Dev budget numeric AC only
+
+---
+
+## Handoff: backend-agent → testing-agent / lead-dev
+
+Date: 2026-07-29
+
+Feature: ep-008-l4-compression-budgets-telemetry
+
+Task IDs: T001–T031, T032, T034 (T021/T037 still OQ-07 gated)
+
+Branch: `feature/ep-008-l4-compression-budgets-telemetry`
+
+### What was completed
+
+- Config: `l4_enabled` (default False), injectable `phase_budgets`, optional cost-rate stub
+- Modules: `l4_relevance`, `l4_compression`, `l4_budgets`, `headroom_summarizer`, `telemetry/compression`
+- Wired `POST /context` after pack/enrichment; L4-off packing semantics preserved; L4-on metrics + `trace.l4_gate=true`
+- Soft-degrade on 200 via `budget_status`/`degraded`; Proposed 413/422 documented only
+- Dashboard: `app/static/contextos_token_dashboard.html` + `GET /contextos_token_dashboard.html`
+- OpenAPI `/context` + Proposed note in `docs/architecture/api-contract.md`
+- T032: IgnorePolicy filter; provenance paths/modes only; consent for external; no secret bodies in telemetry
+- Tests: 33 passed, 3 skipped (incl. T021 OQ-07 + opt-in recall eval)
+
+### Files created/changed (key)
+
+- `app/config.py`, `api/context.py`, `main.py`, `api/token_dashboard.py`
+- `services/l4_*.py`, `adapters/headroom_summarizer.py`, `telemetry/compression.py`
+- `static/contextos_token_dashboard.html`, tests under unit/integration/contract/eval/fixtures
+- `docs/architecture/api-contract.md` (Proposed EP-008 notes)
+
+### Residuals / blockers
+
+- T021/T037 gated on OQ-07 (Dev 8k vs 12k)
+- OQ-08/09 unresolved (serving labeled Proposed; exporter vendor not pinned)
+- T033 L1/OKF regression + T036 review-report for next agents
+- No Confirmed Dev budget invented; Design=32k example only
+
+### Next instructions
+
+- testing-agent: T033 regression + evidence; then review-pr-readiness → review-report.md
+
+---
+
+## Handoff: testing-agent → review-pr-readiness
+
+Date: 2026-07-29  
+Feature: ep-008-l4-compression-budgets-telemetry  
+Branch: `feature/ep-008-l4-compression-budgets-telemetry`
+
+### Runtime evidence
+
+- Graphify-first ok; L4 suite: **42 passed / 3 skipped / 0 failed**
+- Skips expected: T021 OQ-07×2 + T013 opt-in recall (no SC-002 pass claim)
+- Dual-mode metrics PASS (`l4_gate` false→packing; true→L4 `tokens_*`)
+- T033 L1/blast/graph/OKF subset: **32 passed / 6 skipped** (env opt-in only; 0 fail)
+- SC claimable: SC-001 unit, SC-003 functional (+Design=32k), SC-004/005/006; **not** SC-002; Dev numeric blocked OQ-07
+
+### Files touched
+
+- `specs/ep-008-l4-compression-budgets-telemetry/validation-report.md` (runtime section append)
+- No test/prod code fixes
+
+### Next
+
+- review-pr-readiness → `review-report.md` (T036)
+- Do not invent Confirmed Dev=8k/12k; leave T021/T037 gated
+
+
+---
+
+## Handoff: review-pr-readiness → lead-dev / PR
+
+Date: 2026-07-29  
+Feature: ep-008-l4-compression-budgets-telemetry  
+Task IDs: T036 (review-report); T021/T037 still OQ-07 gated  
+Branch: `feature/ep-008-l4-compression-budgets-telemetry`
+
+### Verdict
+
+- **APPROVED WITH CONCERNS** — score **8.2 / 10**
+- **PR-ready: Conditional**
+- Artifact: `specs/ep-008-l4-compression-budgets-telemetry/review-report.md`
+
+### Conditions for PR
+
+1. Disclose OQ-07 blocks Confirmed Dev numeric AC only (core US-022/023/024 OK)
+2. Do **not** claim SC-002 recall@10 (opt-in skip)
+3. Label OQ-08/09 + soft-degrade (`budget_status` on 200) as Proposed
+4. Do not invent Confirmed Dev=8k/12k; cite Runtime Evidence 42p/0f + T033 32p/0f
+5. Verify CI after PR open (branch run Missing Evidence this review)
+
+### Top residuals
+
+- OQ-07 (Dev 8k vs 12k) → T037 unlock later
+- SC-002 unexecuted; OQ-EP008-a degradation steps Proposed
+- Dashboard auth / OTel vendor open (OQ-08/09)
+
+### Next
+
+- Open PR with residual disclosure; route OQ-07 to product for T037
+- No Confirmed OQ contracts invented this review
+

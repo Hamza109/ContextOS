@@ -10,6 +10,10 @@ No Confirmed L3 symbol REST (OQ-Symbol-REST; MCP-first Option A).
 
 EP-007: when blast intent applies, populate existing Confirmed ``blast_radius``
 from L1 blast service (no new response fields). Non-blast L1 enrichment unchanged.
+
+EP-008 Proposed: optional L4 compression after pack/enrichment when ``l4_enabled``.
+Confirmed metrics keys unchanged; packing-estimate semantics when L4 off;
+L4-meaningful tokens_before/after/saving_percent when L4 on (A-06).
 """
 
 from __future__ import annotations
@@ -26,14 +30,17 @@ from app.adapters.qdrant_store import QdrantStore
 from app.adapters.serena_mcp import InMemorySerenaDouble, SerenaMCPAdapter, SerenaMCPConfig
 from app.api.schemas_context import ContextMetrics, ContextRequest, ContextResponse
 from app.config import get_settings
+from app.security.consent_gate import ConsentContext
 from app.services.l1_blast import BlastNotFoundError, BlastService, BlastUnavailableError
 from app.services.l1_structural_query import StructuralQueryService, is_blast_intent
 from app.services.l3_symbol import SymbolService, attach_safe_edit_plan
+from app.services.l4_compression import CompressionService
 from app.services.l5_pack import load_pack_by_repo
 from app.services.l5_phase_pack import DEFAULT_PHASE, pack_for_phase
 from app.services.l5_search import hits_to_relevant_files, hybrid_search
 from app.services.okf_retrieve import attach_okf_evidence, retrieve_okf
 from app.telemetry.blast import record_blast_attributes
+from app.telemetry.compression import record_compression_attributes
 from app.telemetry.context import child_span, context_span, record_duration_ms
 from app.telemetry.symbol import symbol_span
 
@@ -45,7 +52,7 @@ router = APIRouter(tags=["context"])
 @router.post(
     "/context",
     response_model=ContextResponse,
-    summary="Retrieve L5 context with optional L1/L3 enrichment",
+    summary="Retrieve L5 context with optional L1/L3/L4 enrichment",
     description=(
         "Confirmed request: query, file (optional), repo, top_k. "
         "Confirmed response: final_context, metrics "
@@ -61,17 +68,24 @@ router = APIRouter(tags=["context"])
         "HTTP status codes Proposed only (OQ-HTTP-/context). "
         "FR-019 consumer note: future contextos ask / extension Ask SHOULD call this API; "
         "full Ask <3 clicks / CLI remain EP-004 (EP-003 delivers Pack Context surface only). "
-        "No L4 Headroom gate (ADR-006). "
+        "EP-008 Proposed L4: when CONTEXTOS_L4_ENABLED, Confirmed metrics keys become "
+        "L4-meaningful (pre-L4 vs post-L4 tokens / saving_percent); when L4 off, "
+        "packing-estimate semantics from phase pack remain (A-06 / ADR-006). "
+        "Proposed trace notes: l4_gate, l4_stage_order, budget_status, degraded. "
+        "Proposed budget hard-fail HTTP 413/422 — not Confirmed; prefer soft-degrade "
+        "on 200 with trace.budget_status (OQ-HTTP-/context). "
         "EP-006/007: cited metadata-only L1 structural evidence for location/ownership; "
         "EP-007 populates existing blast_radius for blast-intent asks (V1). "
         "Proposed EP-013: OKF-first cited evidence may be appended inside final_context "
         "before L1 enrichment; miss/error preserves L5 hybrid fallback (no new fields)."
     ),
     responses={
-        200: {"description": "Proposed: success (OQ-HTTP-/context)"},
+        200: {"description": "Proposed: success (OQ-HTTP-/context); may include soft budget degrade"},
         400: {"description": "Proposed: validation failure (OQ-HTTP-/context)"},
         403: {"description": "Proposed: RBAC/consent denial when schema exists (OQ-01 open)"},
         404: {"description": "Proposed: unknown/not-indexed repo (OQ-HTTP-/context)"},
+        413: {"description": "Proposed only: budget hard-fail (FR-11) — not Confirmed; soft-degrade preferred"},
+        422: {"description": "Proposed only: budget unmet (FR-11) — not Confirmed"},
         503: {"description": "Proposed: dependency degraded (OQ-HTTP-/context)"},
     },
 )
@@ -189,16 +203,84 @@ def post_context(body: ContextRequest) -> ContextResponse:
             elif blast_status == "blast_unavailable":
                 l1_status = "blast_unavailable"
 
+        # EP-008 Proposed stage order (documented in trace.l4_stage_order):
+        # pack → okf → safe_edit → l1 → blast → l4_compress → budget → respond
+        tokens_before = packed.tokens_before
+        tokens_after = packed.tokens_after
+        saving_percent = packed.saving_percent
+        l4_gate = False
+        budget_status = "not_applicable"
+        l4_degraded = False
+        l4_stage_order = [
+            "pack_for_phase",
+            "okf_evidence",
+            "safe_edit",
+            "l1_structural",
+            "blast_radius",
+            "respond",
+        ]
+
+        if settings.l4_enabled:
+            with child_span("context.l4.compress") as l4span:
+                t_l4 = time.perf_counter()
+                consent = ConsentContext(
+                    external_llm_consent=bool(settings.external_llm_consent),
+                    local_inference_configured=bool(settings.local_inference_enabled),
+                )
+                compressed = CompressionService(settings).compress(
+                    final_context=final_context,
+                    hits=result.hits,
+                    phase=phase,
+                    query=body.query,
+                    phase_budgets=settings.phase_budgets,
+                    consent=consent,
+                    prefer_external=False,
+                )
+                final_context = compressed.final_context
+                # L4-on: Confirmed metrics keys become L4 outcomes (pre vs post).
+                tokens_before = compressed.tokens_before
+                tokens_after = compressed.tokens_after
+                saving_percent = compressed.saving_percent
+                l4_gate = True
+                l4_stage_order = [
+                    "pack_for_phase",
+                    "okf_evidence",
+                    "safe_edit",
+                    "l1_structural",
+                    "blast_radius",
+                    "l4_compress",
+                    "l4_budget",
+                    "respond",
+                ]
+                if compressed.budget is not None:
+                    budget_status = compressed.budget.status
+                    l4_degraded = budget_status in {"degraded", "hard_fail"}
+                record_compression_attributes(
+                    l4span,
+                    tokens_before=tokens_before,
+                    tokens_after=tokens_after,
+                    rate_per_1k_tokens=settings.l4_cost_rate_per_1k_tokens,
+                    phase=phase,
+                    repo=body.repo,
+                    budget_status=budget_status,
+                    enabled=bool(settings.l4_telemetry_enabled),
+                )
+                record_duration_ms(l4span, "duration_ms", (time.perf_counter() - t_l4) * 1000)
+
+        degraded = bool(result.degraded) or l4_degraded
         trace: dict[str, Any] = {
             "phase": packed.phase,
             "vector_hits": result.vector_hits,
             "bm25_hits": result.bm25_hits,
             "mmr_selected": len(result.hits),
-            "degraded": result.degraded,
+            "degraded": degraded,
             "notes": result.trace_notes,
             "duration_ms": int((time.perf_counter() - started) * 1000),
             "citations": "proposed_xml_attributes_oq11_open",
-            "l4_gate": False,
+            "l4_gate": l4_gate,
+            # Proposed EP-008 — non-sensitive L4/budget notes only
+            "l4_stage_order": l4_stage_order,
+            "budget_status": budget_status,
             # Proposed EP-003 trace note only — not a Confirmed Appendix D field
             "l3_safe_edit_enrichment": safe_edit_attached,
             "l1_structural_status": l1_status,
@@ -218,9 +300,9 @@ def post_context(body: ContextRequest) -> ContextResponse:
         return ContextResponse(
             final_context=final_context,
             metrics=ContextMetrics(
-                tokens_before=packed.tokens_before,
-                tokens_after=packed.tokens_after,
-                saving_percent=packed.saving_percent,
+                tokens_before=tokens_before,
+                tokens_after=tokens_after,
+                saving_percent=saving_percent,
                 trace=trace,
             ),
             blast_radius=blast_radius,

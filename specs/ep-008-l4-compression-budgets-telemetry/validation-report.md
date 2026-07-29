@@ -14,9 +14,8 @@
 | **Constitution Applied** | Yes (I–V + Roadmap Governance) |
 | **Ready for lead-developer-agent** | **Yes** (conditions below) |
 
-**Scope of this report:** Spec Kit triad planning & test-planning readiness only.  
-**No test execution evidence reviewed; validation is limited to test planning readiness.**  
-L4 modules (`l4_compression.py`, `l4_budgets.py`, `l4_relevance.py`, `headroom_summarizer.py`) are **Planned / Proposed**, not **Implemented**. Do not treat SC-001/SC-002 (60–95% savings, recall@10 >0.92) as passed.
+**Scope of this report:** Spec Kit triad planning readiness **plus** runtime evidence appended 2026-07-29 (see **Runtime Evidence**).  
+L4 modules are **Implemented**; dual-mode metrics + most SC harnesses executed. **Do not** claim SC-002 recall@10 pass (opt-in skip). **Do not** invent Confirmed Dev=8k/12k (T021/T037 gated).
 
 **Primary condition:** **OQ-07** remains **blocking** for canonical Dev numeric AC (BRD §5 Dev=8k vs FR-11 Dev=12k). Artifacts correctly refuse to invent Confirmed Dev=8k or Dev=12k. Implementation may proceed with injectable budgets + Design=32k evidenced fixtures; Dev numeric AC stays gated (T021/T037).
 
@@ -319,10 +318,92 @@ L4 modules (`l4_compression.py`, `l4_budgets.py`, `l4_relevance.py`, `headroom_s
 
 | Area | Status |
 |------|--------|
-| Spec / Plan / Tasks | **Planned** (complete triad) |
-| L4 CompressionService & budgets | **Not Implemented** (Proposed modules) |
+| Spec / Plan / Tasks | **Complete triad** |
+| L4 CompressionService & budgets | **Implemented** (modules + `/context` wire; `l4_enabled` default off) |
 | Packing metrics baseline (EP-001/002) | **Implemented** (Confirmed keys; packing estimates; `l4_gate=false`) |
-| SC-001 / SC-002 harnesses | **Planned** — not executed |
-| This validation | **Planning readiness only** |
+| SC-001 savings unit harness | **Executed PASS** (synthetic large fixture) |
+| SC-002 recall@10 | **Scaffold only** — default skip / opt-in; **no pass claim** |
+| This validation | Planning + **runtime evidence** (2026-07-29 testing-agent) |
 
-Do not treat EP-008 L4 as shipped. Do not claim compression savings or recall gates passed without command/CI evidence.
+---
+
+## Runtime Evidence (testing-agent, 2026-07-29)
+
+**Branch:** `feature/ep-008-l4-compression-budgets-telemetry`  
+**Runner:** `services/orchestrator/.venv/bin/python -m pytest`  
+**Graphify-first:** `graphify query "EP-008 L4 compression tests" --budget 1000` (ok)
+
+### Counts
+
+| Suite | Planned (approx) | Implemented | Executed | Passed | Failed | Blocked | Skipped |
+|-------|------------------|-------------|---------|--------|--------|---------|---------|
+| EP-008 L4 (+ contract) | T008–T028 harnesses + contract | Present | 45 | **42** | **0** | OQ-07 Dev AC | **3** |
+| T033 L1/blast/graph/OKF subset | Regression only | Present | 38 | **32** | **0** | — | **6** (env opt-in) |
+
+### Commands
+
+```bash
+cd services/orchestrator
+# L4 primary
+./.venv/bin/python -m pytest \
+  tests/unit/test_l4_*.py \
+  tests/contract/test_context_metrics_keys.py \
+  tests/contract/test_context_contract.py \
+  tests/integration/test_context_l4_*.py \
+  tests/integration/test_token_dashboard_artifact.py \
+  tests/eval/test_l4_recall_at_10.py -v
+# → 42 passed, 3 skipped, 0 failed (0.35s)
+
+# T033 subset (focused existing suites)
+./.venv/bin/python -m pytest \
+  tests/integration/test_context_l1_structural.py \
+  tests/integration/test_blast_l1.py \
+  tests/integration/test_blast_graph_compose_smoke.py \
+  tests/integration/test_blast_no_exfil.py \
+  tests/integration/test_graph_html_no_exfil.py \
+  tests/integration/test_context_okf.py \
+  tests/integration/test_index_okf.py \
+  tests/integration/test_index_l1_graph.py \
+  tests/integration/test_l1_compose_smoke.py \
+  tests/unit/test_okf_*.py \
+  tests/contract/test_blast_contract.py \
+  tests/contract/test_graph_html_contract.py \
+  tests/eval/test_blast_accuracy.py \
+  tests/eval/test_l1_graph_accuracy.py \
+  tests/eval/test_l1_structural_queries.py \
+  tests/eval/test_okf_retrieval.py -v
+# → 32 passed, 6 skipped, 0 failed (11.37s)
+```
+
+### Skips (expected — not failures)
+
+| Skip | Reason |
+|------|--------|
+| `test_dev_canonical_budget_oq07[8000\|12000]` (T021) | OQ-07 unresolved — do not invent Confirmed Dev |
+| `test_l4_recall_at_10_scaffold` (T013) | Opt-in `CONTEXTOS_L4_RECALL_EVAL=1`; **no pass claim by default** |
+| T033 compose/Falkor/eval | Env-gated (`CONTEXTOS_L1_COMPOSE_SMOKE`, `CONTEXTOS_FALKORDB_INTEGRATION`, blast/OKF/query eval flags) |
+
+### Dual-mode metrics (SC-004 / A-06) — Confirmed by test
+
+| Mode | Evidence | Result |
+|------|----------|--------|
+| L4 off | `test_l4_off_packing_estimate_semantics` | packing `tokens_*` preserved; `trace.l4_gate is False` |
+| L4 on | `test_l4_on_metrics_are_l4_outcomes` | `l4_gate is True`; `tokens_*` ≠ packing stub; Confirmed key set only |
+
+### Success criteria claim status
+
+| SC | Claim after runtime? | Notes |
+|----|----------------------|-------|
+| SC-001 savings 60–95% | **Unit harness PASS** | `test_l4_savings_math` synthetic fixture; still review-gated for product narrative |
+| SC-002 recall@10 >0.92 | **No** — validation target | Opt-in skipped; fixture present only |
+| SC-003 budgets | **Functional PASS**; Dev numeric **blocked** | Design=32k + injectable degrade PASS; T021/T037 gated OQ-07 |
+| SC-004 meaningful metrics | **PASS** | Dual-mode integration |
+| SC-005 OTel attrs | **PASS** (attrs) | Exporter vendor still OQ-09 |
+| SC-006 dashboard | **PASS** (artifact + route) | Serving still Proposed / OQ-08 |
+
+### Blockers / residuals
+
+- **OQ-07** blocking Confirmed Dev=8k/12k (T021/T037 remain skipped OK)
+- SC-002 no executed pass without opt-in env
+- No production code or test fixes required this run
+- Next: review-pr-readiness → `review-report.md` (T036) — not this agent

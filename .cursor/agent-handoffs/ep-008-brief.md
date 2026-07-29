@@ -61,11 +61,11 @@ Graphify-first before broad exploration; `graphify update .` after substantive a
 | Stream | Tasks | Status |
 |--------|-------|--------|
 | UI/UX | — | N/A (minimal dashboard HTML only) |
-| Backend | T001–T031, T032, T034 | In progress |
+| Backend | T001–T031, T032, T034 | **Done** (backend-agent 2026-07-29) |
 | VS Code | — | N/A |
-| Frontend dashboard | T028, T031 | Via backend (Proposed static/route like graph.html) |
-| Testing | T008–T028 evidence + T033 | After backend |
-| Review | T036 → review-report.md | After tests |
-| OQ-07 gated | T021, T037 | Skip/xfail until resolved |
+| Frontend dashboard | T028, T031 | Done — Proposed `GET /contextos_token_dashboard.html` |
+| Testing | T008–T028 evidence + T033 | **Done** — L4 42p/3s/0f; T033 32p/6s/0f (testing-agent) |
+| Review | T036 → review-report.md | **Done** — CONDITIONAL APPROVAL 8.2/10; PR-ready Conditional |
+| OQ-07 gated | T021, T037 | Still gated (skip/xfail) — do not invent Confirmed Dev |
 
 Do not invent Confirmed Dev=8k/12k, OQ-08 auth, or OQ-09 exporter vendor.

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ContextOS Token Dashboard</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #141e2e;
+      --text: #e8eef7;
+      --muted: #93a4bd;
+      --accent: #3d8bfd;
+      --before: #f0a202;
+      --after: #2bb673;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2740, var(--bg));
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2.5rem 1.5rem;
+    }
+    main { max-width: 720px; margin: 0 auto; }
+    h1 {
+      font-family: "IBM Plex Serif", Georgia, serif;
+      font-weight: 600;
+      font-size: 1.85rem;
+      margin: 0 0 0.35rem;
+      letter-spacing: -0.02em;
+    }
+    .sub { color: var(--muted); margin-bottom: 1.75rem; font-size: 0.95rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid #243247;
+      border-radius: 10px;
+      padding: 1.25rem 1.35rem;
+    }
+    .label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    .value { font-size: 2rem; font-variant-numeric: tabular-nums; margin-top: 0.35rem; }
+    .before .value { color: var(--before); }
+    .after .value { color: var(--after); }
+    .saving {
+      margin-top: 1rem;
+      background: linear-gradient(90deg, #1b2a44, #173528);
+      border: 1px solid #2c4a3a;
+      border-radius: 10px;
+      padding: 1.1rem 1.35rem;
+    }
+    .meta { margin-top: 1.25rem; color: var(--muted); font-size: 0.85rem; line-height: 1.6; }
+    .note { margin-top: 1.5rem; font-size: 0.8rem; color: #6f8099; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>ContextOS</h1>
+    <p class="sub">Token cost — before / after compression (Proposed EP-008 dashboard)</p>
+    <div class="grid">
+      <div class="card before">
+        <div class="label">Tokens before</div>
+        <div class="value" id="tokens-before">{{TOKENS_BEFORE}}</div>
+      </div>
+      <div class="card after">
+        <div class="label">Tokens after</div>
+        <div class="value" id="tokens-after">{{TOKENS_AFTER}}</div>
+      </div>
+    </div>
+    <div class="saving">
+      <div class="label">Saving percent</div>
+      <div class="value" id="saving-percent">{{SAVING_PERCENT}}%</div>
+    </div>
+    <div class="meta">
+      Source: <span id="source">{{SOURCE}}</span><br />
+      Repo: <span id="repo">{{REPO}}</span> · Phase: <span id="phase">{{PHASE}}</span><br />
+      Budget status: <span id="budget-status">{{BUDGET_STATUS}}</span>
+    </div>
+    <p class="note">
+      Serving is Proposed (OQ-08). Auth Missing Evidence — local trusted draft.
+      Not a Confirmed GET /metrics contract.
+    </p>
+  </main>
+</body>
+</html>
