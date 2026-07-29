@@ -145,7 +145,8 @@ def pack_for_phase(
     )
 
 
-def _phase_role(hit: SearchHit, phase: str) -> str:
+def phase_role(hit: SearchHit, phase: str) -> str:
+    """Public phase_role helper (EP-008 L4 reuse)."""
     path = hit.path.lower()
     is_test = "test" in path or path.endswith("_test.py") or "/tests/" in path
     if phase == "Test":
@@ -159,6 +160,10 @@ def _phase_role(hit: SearchHit, phase: str) -> str:
             x in path for x in ("main.", "docker", "deploy", "compose", "config")
         ) else "runtime_related"
     return "implementation"
+
+
+# Back-compat alias for in-module callers
+_phase_role = phase_role
 
 
 def _phase_excerpt(hit: SearchHit, phase: str) -> str:

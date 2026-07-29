@@ -13,6 +13,7 @@ from app.api.context import router as context_router
 from app.api.graph import router as graph_router
 from app.api.health import router as health_router
 from app.api.index import router as index_router
+from app.api.token_dashboard import router as token_dashboard_router
 from app.config import get_settings
 
 
@@ -27,14 +28,16 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(
     title="ContextOS Orchestrator",
-    version="0.4.0",
+    version="0.5.0",
     description=(
         "EP-001 L5 Repository Packing & Indexing + EP-002 Hybrid Search & Phase Packing "
         "+ EP-003 L3 Symbol enrichment + EP-006 L1 structural graph/evidence "
         "+ EP-007 L1 blast radius (GET /blast) & graph.html visualization "
+        "+ Proposed EP-008 L4 compression / budgets / token dashboard "
         "+ Proposed EP-013 OKF primary knowledge (generate on /index; OKF-first /context). "
         "Confirmed Appendix D HTTP: GET /, POST /index, POST /context, "
         "GET /blast/{file_name}, GET /graph.html (+ health). "
+        "Proposed: GET /contextos_token_dashboard.html (OQ-08 serving open). "
         "No Confirmed L3 symbol REST (api-contract §3; MCP-first Option A; "
         "OQ-Symbol-REST open). "
         "Proposed: Serena MCP knobs; safe-edit delimited block inside final_context "
@@ -42,7 +45,7 @@ app = FastAPI(
         "final_context + metrics.trace only (no new Confirmed fields); "
         "blast owners: [] (OQ-15); graph.html auth NEEDS CLARIFICATION (local trusted draft). "
         "Local embeddings only on index path; no external LLM exfil. "
-        "Out of scope: Confirmed symbol REST, L4 product, L2/L6, "
+        "Out of scope: Confirmed symbol REST, L2/L6, "
         "rename execution sandbox, full EP-004 CLI/Ask, JetBrains, VS Code React Flow "
         "(US-020 — extension-owned)."
     ),
@@ -73,3 +76,4 @@ app.include_router(index_router)
 app.include_router(context_router)
 app.include_router(blast_router)
 app.include_router(graph_router)
+app.include_router(token_dashboard_router)

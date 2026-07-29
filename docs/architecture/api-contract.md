@@ -154,6 +154,14 @@ inside existing `final_context`, with non-sensitive `okf_status` / timing notes 
 existing `metrics.trace`. No new Confirmed request/response fields or endpoints. Miss or
 error preserves hybrid search. MCP remains a stateless pass-through.
 
+**EP-008 Proposed implementation note:** When L4 compression is enabled (`CONTEXTOS_L4_ENABLED`),
+Confirmed `metrics.tokens_before` / `tokens_after` / `saving_percent` are **L4-meaningful**
+(pre-L4 vs post-L4). When L4 is off, those keys remain packing-estimate semantics from
+`pack_for_phase`. Proposed `metrics.trace` notes only: `l4_gate`, `l4_stage_order`,
+`budget_status`, `degraded`. Proposed HTTP `413`/`422` for budget hard-fail are **not
+Confirmed** — soft-degrade on `200` with `trace.budget_status` is preferred. Dev phase
+canonical token ceiling remains **[NEEDS CLARIFICATION: OQ-07]** (injectable budgets only).
+
 ---
 
 ### 2.4 `GET /blast/{file_name}`
@@ -218,7 +226,7 @@ Do **not** implement as committed contract without product confirmation. Label a
 
 | Proposed endpoint | Implied by | Rationale |
 |-------------------|------------|-----------|
-| `GET /metrics` or static `contextos_token_dashboard.html` | FR-13 | Dashboard named; **serving mechanism Missing Evidence** |
+| `GET /metrics` or static `contextos_token_dashboard.html` | FR-13 | Dashboard named; **serving mechanism Missing Evidence [OQ-08]**. **Proposed** local draft: `GET /contextos_token_dashboard.html` (graph.html-style; no Confirmed auth / no Confirmed `GET /metrics`) |
 | Memory CRUD (`pin` / `forget`) | FR-18 | Governance required; **HTTP shapes Not evidenced** |
 | Multi-modal ingest trigger | FR-14 | Ingestion required V2; may reuse `POST /index` — **NEEDS CLARIFICATION** |
 | Symbol proxy REST | FR-04..06 | May remain Serena MCP-only without REST — **NEEDS CLARIFICATION** |

@@ -1,0 +1,16 @@
+{
+  "relevant_paths": [
+    "relevant/api_main.py",
+    "relevant/api_1.py",
+    "relevant/api_2.py",
+    "relevant/api_3.py",
+    "relevant/api_4.py",
+    "relevant/api_5.py",
+    "relevant/api_6.py",
+    "relevant/api_7.py",
+    "relevant/api_8.py",
+    "relevant/api_9.py"
+  ],
+  "k": 10,
+  "target_recall": 0.92
+}
