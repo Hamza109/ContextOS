@@ -121,9 +121,67 @@ export async function postContext(
   return assertContextResponse(parsed);
 }
 
+export type FormatAskPackOptions = {
+  /** Orchestrator base URL used to build openable graph/blast links. */
+  baseUrl: string;
+  repo: string;
+  file?: string | null;
+  query?: string;
+  /** graph.html depth (Confirmed 1–5). */
+  depth?: number;
+};
+
+const _PATH_HINT_RE =
+  /(?:[\w.-]+\/)*[\w.-]+\.(?:py|ts|tsx|js|jsx|go|java)\b/i;
+
+/** Proposed: mirror FastAPI path-hint extraction for discoverable graph URLs. */
+export function extractPathHint(query: string | undefined | null): string | null {
+  const match = _PATH_HINT_RE.exec(query || "");
+  return match ? match[0] : null;
+}
+
+export function buildGraphHtmlUrl(
+  baseUrl: string,
+  repo: string,
+  file?: string | null,
+  depth = 3,
+): string {
+  const root = baseUrl.replace(/\/+$/, "");
+  const d = Math.max(1, Math.min(5, Math.floor(depth)));
+  const params = new URLSearchParams({
+    repo,
+    depth: String(d),
+  });
+  if (file && file.trim()) {
+    params.set("file", file.trim().replace(/^\/+/, ""));
+  }
+  return `${root}/graph.html?${params.toString()}`;
+}
+
+export function buildBlastApiUrl(
+  baseUrl: string,
+  file: string,
+  repo: string,
+): string {
+  const root = baseUrl.replace(/\/+$/, "");
+  const path = file.trim().replace(/^\/+/, "");
+  return `${root}/blast/${path.split("/").map(encodeURIComponent).join("/")}?repo=${encodeURIComponent(repo)}`;
+}
+
+function hasBlastPayload(blast: Record<string, unknown> | null | undefined): boolean {
+  if (!blast || typeof blast !== "object") return false;
+  const direct = blast.direct_dependents;
+  const transitive = blast.transitive;
+  if (Array.isArray(direct) && direct.length > 0) return true;
+  if (Array.isArray(transitive) && transitive.length > 0) return true;
+  if (typeof blast.risk === "string" && blast.risk.length > 0) return true;
+  return Object.keys(blast).length > 0;
+}
+
 export function formatAskPack(
   response: ContextResponse,
   maxChars: number,
+  opts?: FormatAskPackOptions,
 ): string {
   const m = response.metrics;
   const header = [
@@ -142,8 +200,43 @@ export function formatAskPack(
   }
 
   const files = formatRelevantFiles(response.relevant_files);
-  const footer = `\n\n--- relevant_files ---\n${files}${truncated ? "\n(note: final_context truncated by max_chars)" : ""}`;
-  return `${header}\n${body}${footer}`;
+  const sections: string[] = [
+    `\n\n--- relevant_files ---\n${files}`,
+  ];
+  if (truncated) {
+    sections.push("(note: final_context truncated by max_chars)");
+  }
+
+  if (hasBlastPayload(response.blast_radius)) {
+    sections.push(
+      "",
+      "--- blast_radius (L1 reverse IMPORTS from FastAPI) ---",
+      JSON.stringify(response.blast_radius, null, 2),
+      "Note: this is who imports the file — not Nest/module wiring inside the file.",
+    );
+  }
+
+  if (opts?.baseUrl && opts.repo) {
+    const seed =
+      (opts.file && opts.file.trim()) ||
+      extractPathHint(opts.query) ||
+      null;
+    const depth = opts.depth ?? 3;
+    const graphUrl = buildGraphHtmlUrl(opts.baseUrl, opts.repo, seed, depth);
+    sections.push(
+      "",
+      "--- open graphs ---",
+      `L1 IMPORTS graph (browser): ${graphUrl}`,
+    );
+    if (seed) {
+      sections.push(`Blast API (JSON): ${buildBlastApiUrl(opts.baseUrl, seed, opts.repo)}`);
+    }
+    sections.push(
+      "VS Code: Command Palette → ContextOS: Show Blast Graph (uses GET /blast)",
+    );
+  }
+
+  return `${header}\n${body}${sections.join("\n")}`;
 }
 
 function formatRelevantFiles(relevantFiles: unknown[]): string {

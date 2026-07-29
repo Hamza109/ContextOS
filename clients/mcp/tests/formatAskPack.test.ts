@@ -54,8 +54,32 @@ describe("formatAskPack", () => {
         owners: [],
       }),
     );
-    const text = formatAskPack(pack, 50_000);
+    const text = formatAskPack(pack, 50_000, {
+      baseUrl: "http://127.0.0.1:8000",
+      repo: "ux-validator",
+      file: "apps/api/src/app.module.ts",
+    });
     expect(text).toContain("ContextOS pack");
+    expect(text).toContain("--- blast_radius");
+    expect(text).toContain('"direct_dependents"');
+    expect(text).toContain("src/b.py");
+    expect(text).toContain("--- open graphs ---");
+    expect(text).toContain(
+      "http://127.0.0.1:8000/graph.html?repo=ux-validator&depth=3&file=apps%2Fapi%2Fsrc%2Fapp.module.ts",
+    );
+    expect(text).toContain(
+      "http://127.0.0.1:8000/blast/apps/api/src/app.module.ts?repo=ux-validator",
+    );
+  });
+
+  it("extracts file path from query for graph URL when file param omitted", () => {
+    const text = formatAskPack(sample({ blast_radius: {} }), 50_000, {
+      baseUrl: "http://127.0.0.1:8000",
+      repo: "demo",
+      query: "Blast radius of apps/api/src/main.ts",
+    });
+    expect(text).toContain("graph.html?repo=demo");
+    expect(text).toContain("file=apps%2Fapi%2Fsrc%2Fmain.ts");
   });
 });
 

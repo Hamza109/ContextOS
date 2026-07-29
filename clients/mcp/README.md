@@ -8,7 +8,7 @@ Thin MCP server so Cursor/agents can call budgeted **`POST /context`** like Grap
 |------|---------|
 | `contextos_health` | `GET /` |
 | `contextos_index` | `POST /index` (`repo_path`, `repo_name`) |
-| `contextos_ask` | `POST /context` (`query`, `repo`, `top_k`, optional `file`) + Proposed `max_chars` truncate |
+| `contextos_ask` | `POST /context` + pack text including `blast_radius` (when present) and openable `/graph.html` + `/blast` links |
 
 ## Run locally
 

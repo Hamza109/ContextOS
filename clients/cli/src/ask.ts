@@ -73,7 +73,12 @@ export async function runAsk(
     });
     const text = args.json
       ? formatMachineAskReport(response)
-      : formatHumanAskReport(response);
+      : formatHumanAskReport(response, {
+          baseUrl,
+          repo: body.repo,
+          file: body.file,
+          query: body.query,
+        });
     stdout(text.endsWith("\n") ? text : `${text}\n`);
     return response;
   } catch (err) {

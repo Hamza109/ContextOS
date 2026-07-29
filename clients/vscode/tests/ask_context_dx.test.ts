@@ -186,6 +186,13 @@ describe("ask_context_dx (T035/T036/T038/T040–T046)", () => {
     expect(report).toContain("src/auth.ts");
     expect(formatRelevantFiles([{ path: "a.ts" }])).toContain("a.ts");
     expect(formatAskContextReport(response!)).toContain("tokens_after");
+    expect(
+      formatAskContextReport(response!, {
+        orchestratorBaseUrl: "http://127.0.0.1:8000",
+        repo: "ux-validator",
+        file: "apps/api/src/app.module.ts",
+      }),
+    ).toContain("graph.html?repo=ux-validator");
     expect(logLatency).toHaveBeenCalled();
     expect(ASK_LATENCY_LOG_PREFIX).toBe("[ContextOS][obs][ask]");
   });
